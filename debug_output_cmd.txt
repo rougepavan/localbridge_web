@@ -1,0 +1,9 @@
+--- DB RAW CHECK ---
+Total raw products in DB: 1
+Item 0: id=1, name=Oats, category=Functional Food, user_name=gangalapudifamily123@gmail.com
+
+--- API RESPONSE CHECK ---
+Status: 200
+API returned 1 items
+First item keys: dict_keys(['ai_insight', 'category', 'created_at', 'description', 'distance', 'expiry_date', 'freshness', 'id', 'image_name', 'item_condition', 'lat', 'lng', 'name', 'ownerEmail', 'rating', 'real_user_name', 'return_offer', 'used_for', 'userAvatar', 'user_id', 'user_name'])
+First item preview (first 200 chars): {"ai_insight": null, "category": "Functional Food", "created_at": "Mon, 16 Mar 2026 14:16:07 GMT", "description": "AI Insight: This Oats belongs to our premium Functional category. Verified for qualit

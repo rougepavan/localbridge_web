@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History - LocalBridge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="/static/css/main.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <link href="/static/css/premium-ui.css" rel="stylesheet">
+    <style>
+      .timeline-container { position: relative; padding-left: 2rem; margin-top: 2rem; }
+      .timeline-line {
+          position: absolute; left: 0; top: 0; bottom: 0; width: 2px;
+          background: linear-gradient(180deg, var(--primary) 0%, #ec4899 100%);
+          border-radius: 99px;
+          transform-origin: top center;
+          transform: scaleY(0); /* Hidden initially for GSAP */
+      }
+      .timeline-dot {
+          position: absolute; left: -5px; top: 1.5rem; width: 12px; height: 12px;
+          background: white; border: 3px solid var(--primary); border-radius: 50%;
+          box-shadow: 0 0 10px rgba(79, 70, 229, 0.4);
+          transform: scale(0);
+      }
+      .timeline-item { position: relative; padding-bottom: 3rem; opacity: 0; transform: translateX(20px); }
+    </style>
+</head>
+<body class="mesh-bg">
+
+    <div class="dashboard-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <!-- Injected by sidebar.js -->
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Injected by sidebar.js -->
+            </nav>
+
+            <div style="padding: 1.5rem 1rem;">
+                <button class="nav-item w-full sidebar-logout text-red-400 hover:text-red-300 hover:bg-red-500/10 justify-start border-none">
+                    <!-- Injected by sidebar.js -->
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <button class="md:hidden icon-btn" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <div class="nav-actions ml-auto">
+                    <div class="user-profile-btn" id="profileMenuBtn">
+                        <img src="" onerror="this.src='https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff'" id="navAvatar" class="user-avatar" alt="Avatar">
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div class="max-w-2xl mx-auto">
+                    <div class="mb-4 reveal-fade">
+                        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Your Activity</h1>
+                        <p class="text-slate-500 mt-2 text-lg">A cinematic timeline of everything you've shared.</p>
+                    </div>
+
+                    <div class="timeline-container">
+                        <div class="timeline-line"></div>
+                        <div id="history-feed">
+                            <!-- Injected Timeline Items -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/animations.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            AppState.requireAuth();
+            loadHistory();
+        });
+
+        async function loadHistory() {
+            try {
+                const user = AppState.getUser();
+                const res = await fetch(`/my-products?user_name=${user.email}`);
+                const data = await res.json();
+                
+                const feed = document.getElementById('history-feed');
+                
+                if (!data || data.length === 0) {
+                    feed.innerHTML = `
+                        <div class="premium-empty-state opacity-0">
+                            <h3 class="text-lg font-bold">No history yet</h3>
+                            <p class="text-slate-500">Your posted items will appear here as a timeline.</p>
+                        </div>
+                    `;
+                    gsap.to('.premium-empty-state', { opacity: 1, duration: 1 });
+                    return;
+                }
+
+                feed.innerHTML = data.map((p, i) => `
+                    <div class="timeline-item">
+                        <div class="timeline-dot border-${i % 2 === 0 ? 'pink-500' : 'indigo-500'}"></div>
+                        <div class="bg-white premium-glass p-5 rounded-2xl flex gap-5 hover:shadow-xl transition-shadow border border-slate-100 items-center">
+                            <img src="/static/uploads/${p.image_name}" alt="${p.name}" class="w-20 h-20 rounded-xl object-cover shadow-sm bg-slate-100" onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Image+Not+Found'">
+                            <div>
+                                <h3 class="font-bold text-lg text-slate-900 mb-1">${p.name}</h3>
+                                <div class="flex gap-2 text-xs">
+                                    <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded border border-slate-200">${p.category}</span>
+                                    <span class="text-slate-400 py-1">#${p.id}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                // GSAP Cinematic Timeline Animation
+                const tl = gsap.timeline();
+                
+                // Draw the vertical line smoothly
+                tl.to('.timeline-line', {
+                    scaleY: 1,
+                    duration: 1.5,
+                    ease: "power2.out"
+                })
+                // Pop the dots
+                .to('.timeline-dot', {
+                    scale: 1,
+                    duration: 0.6,
+                    stagger: 0.15,
+                    ease: "back.out(2)"
+                }, "-=1.0")
+                // Slide in the glass cards
+                .to('.timeline-item', {
+                    x: 0,
+                    opacity: 1,
+                    duration: 0.8,
+                    stagger: 0.15,
+                    ease: "power3.out"
+                }, "-=1.0");
+
+            } catch { showToast('Error loading history', 'error'); }
+        }
+    </script>
+</body>
+</html>

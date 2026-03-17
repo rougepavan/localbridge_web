@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exchange Details - LocalBridge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="/static/css/main.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <link href="/static/css/premium-ui.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        .otp-modal-bg { background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); }
+        .otp-input { letter-spacing: 0.5em; font-size: 1.8rem; text-align: center; }
+    </style>
+    <style>
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+            background: #f8fafc;
+            border-radius: 1rem;
+        }
+        .chat-message {
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+        }
+        .message-sent {
+            align-self: flex-end;
+            background: #4f46e5;
+            color: white;
+            border-bottom-right-radius: 0.25rem;
+        }
+        .message-received {
+            align-self: flex-start;
+            background: white;
+            color: #1e293b;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 0.25rem;
+        }
+    </style>
+</head>
+<body class="mesh-bg">
+
+    <div class="dashboard-layout">
+        <!-- Reusing Premium Sidebar from dashboard -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <!-- Injected by sidebar.js -->
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Injected by sidebar.js -->
+            </nav>
+
+            <div style="padding: 1.5rem 1rem;">
+                <button class="nav-item w-full sidebar-logout text-red-400 hover:text-red-300 hover:bg-red-500/10 justify-start border-none">
+                    <!-- Injected by sidebar.js -->
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <button class="md:hidden icon-btn" id="sidebarMenuBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <div class="nav-actions ml-auto flex items-center gap-4">
+                    <a href="/matches" class="text-indigo-600 font-semibold text-sm hover:underline flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Back to Matches
+                    </a>
+                    <div class="user-profile-btn" id="profileMenuBtn">
+                        <img src="" onerror="this.src='https://ui-avatars.com/api/?name=User&background=4f46e5&color=fff'" id="navAvatar" class="user-avatar" alt="Avatar">
+                        <div class="user-info hidden sm:flex pr-2">
+                            <span class="user-name" id="navName"></span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="content-area">
+                <div class="mb-10 reveal-fade">
+                    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight" id="pageTitle">Exchange Details</h1>
+                    <p class="text-slate-500 mt-2">Manage the meetup and chat with your exchange partner.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- Left Column: Details & Meetup Info -->
+                    <div class="lg:col-span-1 space-y-6">
+                        
+                        <!-- Product Card summary -->
+                        <div class="premium-glass p-6">
+                            <h3 class="font-bold text-lg text-slate-800 border-b border-slate-100 pb-3 mb-4">Item Details</h3>
+                            <div class="flex flex-col md:flex-row items-start md:items-center gap-4 border-b border-slate-100 pb-4 mb-4">
+                                <img id="productImage" src="" class="w-24 h-24 object-cover rounded-xl shadow-sm bg-slate-100 flex-shrink-0" />
+                                <div>
+                                    <h4 id="productName" class="font-bold text-slate-900 text-xl leading-tight">...</h4>
+                                    <div class="mt-2 mb-3 text-xs font-semibold px-2 py-1 bg-indigo-50 text-indigo-700 rounded w-fit capitalize" id="exchangeStatus">Status</div>
+                                    <p id="productDescription" class="text-sm text-slate-600 leading-relaxed"></p>
+                                </div>
+                            </div>
+                            
+                            <!-- Product Location Map -->
+                            <div class="mt-4 mb-4">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Item Origin Location</p>
+                                <div id="product-map" class="rounded-xl overflow-hidden border border-slate-200" style="height: 150px; width: 100%;"></div>
+                            </div>
+
+                            <div id="actionBarContainer"></div>
+                        </div>
+
+                        <!-- Meetup Details Modification -->
+                        <div class="premium-glass p-6">
+                            <h3 class="font-bold text-lg text-slate-800 border-b border-slate-100 pb-3 mb-4">Meetup Details</h3>
+                            <form id="meetupForm" onsubmit="updateMeetup(event)">
+                                <div class="space-y-4">
+                                    <div class="form-group">
+                                        <label class="form-label text-sm text-slate-600">Date</label>
+                                        <input type="date" id="meetDate" class="form-input text-sm" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label text-sm text-slate-600">Time</label>
+                                        <input type="time" id="meetTime" class="form-input text-sm" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label text-sm text-slate-600">Location (Pick on map below)</label>
+                                        <input type="text" id="meetLoc" placeholder="e.g. Starbucks downtown" class="form-input text-sm" required>
+                                    </div>
+                                    <input type="hidden" id="lat" name="lat">
+                                    <input type="hidden" id="lng" name="lng">
+                                    
+                                    <div id="meetup-map-container" class="rounded-xl overflow-hidden border border-slate-200 relative group" style="height: 200px; width: 100%;">
+                                        <div id="meetup-map" style="height: 100%; width: 100%;"></div>
+                                        <div class="absolute top-2 left-2 right-2 z-[1000] flex gap-1.5">
+                                            <input type="text" id="map-search" placeholder="Search meetup point..." class="flex-1 text-[10px] p-1.5 rounded border border-slate-200 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                            <button type="button" onclick="searchLocation()" class="bg-indigo-600 text-white p-1.5 rounded shadow hover:bg-indigo-700 transition-colors">
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                            </button>
+                                        </div>
+                                        <button type="button" onclick="locateMe()" class="absolute bottom-2 right-2 z-[1000] bg-white p-1.5 rounded shadow hover:bg-slate-50 transition border border-slate-200 flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                                            Locate
+                                        </button>
+                                    </div>
+                                    <button type="submit" class="w-full btn-premium btn-premium-indigo py-2.5 text-sm text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30">
+                                        Update Details
+                                    </button>
+
+                                    <div id="completionSection" class="hidden pt-4 border-t border-slate-100">
+                                        <button type="button" onclick="initiateCompletion()" class="w-full btn-premium btn-premium-emerald py-2.5 text-sm text-white font-bold rounded-xl shadow-lg shadow-emerald-600/20">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                            Mark Handover Completed
+                                        </button>
+                                        <p class="text-[10px] text-slate-500 mt-2 text-center">Requires OTP verification from partner.</p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Chat System -->
+                    <div class="lg:col-span-2">
+                        <div class="premium-glass p-6 h-full flex flex-col">
+                            <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
+                                <img id="partnerAvatar" src="" class="w-10 h-10 rounded-full bg-slate-100 object-cover border border-slate-200">
+                                <div>
+                                    <h3 class="font-bold text-slate-900 leading-tight" id="partnerName"></h3>
+                                    <p class="text-xs text-slate-500">Chat Partner</p>
+                                </div>
+                            </div>
+                            
+                            <div class="chat-container flex-grow mb-4" id="chatBox">
+                                <!-- Messages injected here -->
+                                <div class="w-full h-full flex items-center justify-center text-slate-400 text-sm">Loading messages...</div>
+                            </div>
+
+                            <form id="chatForm" onsubmit="sendMessage(event)" class="mt-auto pt-4 border-t border-slate-100 flex gap-3">
+                                <input type="text" id="chatInput" placeholder="Type your message..." class="form-input flex-grow text-sm shadow-sm" required>
+                                <button type="submit" class="btn-premium btn-premium-indigo px-5 py-2.5 rounded-xl text-white" id="sendBtn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/animations.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const exchangeId = urlParams.get('match_id') || urlParams.get('id');
+        let currentUserId = null;
+        let partnerEmail = null;
+        let exchangeData = null;
+        let messagePolling = null;
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            AppState.requireAuth();
+            currentUserId = AppState.getUser().email;
+            initMaps();
+            
+            if(!exchangeId) {
+                window.location.href = '/matches';
+                return;
+            }
+
+            await loadDetails();
+            await loadMessages();
+        });
+
+        let productMap, productMarker;
+        let meetupMap, meetupMarker;
+
+        function initMaps() {
+            // Default center India
+            const indiaCenter = [20.5937, 78.9629];
+            
+            // Product View Map
+            productMap = L.map('product-map').setView(indiaCenter, 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(productMap);
+            productMarker = L.marker(indiaCenter).addTo(productMap);
+
+            // Meetup Picker Map
+            meetupMap = L.map('meetup-map').setView(indiaCenter, 5);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(meetupMap);
+            meetupMarker = L.marker(indiaCenter, { draggable: true }).addTo(meetupMap);
+
+            meetupMap.on('click', (e) => {
+                const { lat, lng } = e.latlng;
+                updateMeetupLocation(lat, lng);
+            });
+
+            meetupMarker.on('dragend', (e) => {
+                const { lat, lng } = meetupMarker.getLatLng();
+                updateMeetupLocation(lat, lng);
+            });
+        }
+
+        function locateMe(isManual = true) {
+            if (!navigator.geolocation) {
+                if(isManual) showToast('Geolocation is not supported by your browser.', 'error');
+                return;
+            }
+            
+            if(isManual) showToast('Detecting your location...', 'info');
+            const options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
+            
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const { latitude, longitude } = pos.coords;
+                updateMeetupLocation(latitude, longitude, 15);
+                if(isManual) showToast('Location detected!', 'success');
+            }, (err) => {
+                if(isManual) {
+                    console.warn(`Geolocation error (${err.code}): ${err.message}`);
+                    let msg = 'Could not detect location.';
+                    if(err.code === 1) msg = 'Location permission blocked. Please enable it in your browser settings or click the map manually.';
+                    else if(err.code === 3) msg = 'Location request timed out. Please try again or click the map manually.';
+                    showToast(msg, 'error');
+                }
+            }, options);
+        }
+
+        async function updateMeetupLocation(lat, lng, zoom = null) {
+            meetupMarker.setLatLng([lat, lng]);
+            if(zoom) meetupMap.setView([lat, lng], zoom);
+            else meetupMap.panTo([lat, lng]);
+            
+            document.getElementById('lat').value = lat;
+            document.getElementById('lng').value = lng;
+
+            // Reverse geocode
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await res.json();
+                if(data.display_name) {
+                    document.getElementById('meetLoc').value = data.display_name;
+                }
+            } catch(e) { console.error('Geocode error', e); }
+        }
+
+        async function searchLocation() {
+            const query = document.getElementById('map-search').value;
+            if(!query) return;
+            
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const data = await res.json();
+                if(data && data.length > 0) {
+                    const { lat, lon } = data[0];
+                    updateMeetupLocation(parseFloat(lat), parseFloat(lon), 15);
+                } else {
+                    showToast('Location not found.', 'error');
+                }
+            } catch(e) {
+                showToast('Search error.', 'error');
+            }
+        }
+
+        async function loadDetails() {
+            try {
+                const res = await fetch(`/exchange-details-data?id=${exchangeId}`);
+                if (!res.ok) throw new Error('Failed to load exchange data');
+                exchangeData = await res.json();
+
+                // Set UI
+                const isSender = exchangeData.sender_email === currentUserId;
+                partnerEmail = isSender ? exchangeData.receiver_email : exchangeData.sender_email;
+                const pName = isSender ? exchangeData.receiver_name : exchangeData.sender_name;
+                const pAvatar = (isSender ? exchangeData.receiver_avatar : exchangeData.sender_avatar) || `https://ui-avatars.com/api/?name=${pName}`;
+
+                document.getElementById('productName').textContent = exchangeData.productName;
+                document.getElementById('productImage').src = `/static/uploads/${exchangeData.productImage}`;
+                
+                // Fetch full product description from the /product-details endpoint since exchangeData might not have it
+                try {
+                    const pRes = await fetch(`/product-details?id=${exchangeData.product_id}`);
+                    if(pRes.ok) {
+                        const pData = await pRes.json();
+                        document.getElementById('productDescription').textContent = pData.description || 'No description provided.';
+                        
+                        // Update product map if lat/lng available
+                        if(pData.lat && pData.lng) {
+                            const pos = [pData.lat, pData.lng];
+                            productMarker.setLatLng(pos);
+                            productMap.setView(pos, 13);
+                        } else {
+                            document.getElementById('product-map').style.display = 'none';
+                        }
+                    } else {
+                        document.getElementById('productDescription').textContent = 'No description provided.';
+                        document.getElementById('product-map').style.display = 'none';
+                    }
+                } catch(e) {
+                    document.getElementById('productDescription').textContent = '';
+                    document.getElementById('product-map').style.display = 'none';
+                }
+
+                document.getElementById('exchangeStatus').textContent = exchangeData.status;
+
+                let sColor = 'bg-amber-50 text-amber-700';
+                if(exchangeData.status === 'Accepted') sColor = 'bg-green-50 text-green-700';
+                if(exchangeData.status === 'Completed') sColor = 'bg-slate-100 text-slate-700';
+                document.getElementById('exchangeStatus').className = `mt-2 text-xs font-semibold px-2 py-1 rounded w-fit ${sColor}`;
+
+                let actionBarHTML = '';
+                if(exchangeData.status === 'Requested' && !isSender) {
+                    // Receiver of the request looking at details
+                    actionBarHTML = `
+                        <div class="mt-5 flex gap-3 pt-4 border-t border-slate-100">
+                            <button onclick="updateRequestStatus('Declined')" class="flex-1 py-2 text-sm rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-red-50 hover:text-red-600 transition-colors">Decline Request</button>
+                            <button onclick="updateRequestStatus('Accepted')" class="flex-1 py-2 text-sm rounded-lg font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors">Accept Request</button>
+                        </div>
+                    `;
+                } else if (exchangeData.status === 'Requested' && isSender) {
+                    actionBarHTML = `
+                        <div class="mt-5 pt-4 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-100">Waiting for owner response...</div>
+                    `;
+                }
+                document.getElementById('actionBarContainer').innerHTML = actionBarHTML;
+
+                if(exchangeData.date) document.getElementById('meetDate').value = exchangeData.date;
+                if(exchangeData.time) document.getElementById('meetTime').value = exchangeData.time;
+                if(exchangeData.location) document.getElementById('meetLoc').value = exchangeData.location;
+
+                document.getElementById('partnerName').textContent = pName;
+                document.getElementById('partnerAvatar').src = pAvatar.includes('https') ? pAvatar : `/static/uploads/${pAvatar}`;
+
+                // Update Meetup Picker Map
+                if(exchangeData.lat && exchangeData.lng) {
+                    const pos = [exchangeData.lat, exchangeData.lng];
+                    meetupMarker.setLatLng(pos);
+                    meetupMap.setView(pos, 13);
+                    document.getElementById('lat').value = exchangeData.lat;
+                    document.getElementById('lng').value = exchangeData.lng;
+                }
+
+                // --- Completion Section Visibility ---
+                const compSec = document.getElementById('completionSection');
+                const isOwner = exchangeData.receiver_email === currentUserId;
+                
+                if(exchangeData.status === 'Accepted' && isOwner) {
+                    compSec.classList.remove('hidden');
+                } else if(exchangeData.status === 'Completed') {
+                    compSec.innerHTML = '<div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-center font-bold text-sm">🤝 Exchange Completed</div>';
+                    compSec.classList.remove('hidden');
+                }
+
+            } catch(e) {
+                console.error(e);
+                showToast('Error loading details.', 'error');
+            }
+        }
+
+        async function updateMeetup(e) {
+            e.preventDefault();
+            const date = document.getElementById('meetDate').value;
+            const time = document.getElementById('meetTime').value;
+            const loc = document.getElementById('meetLoc').value;
+
+            try {
+                const res = await fetch('/exchange/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        requestId: exchangeId,
+                        status: exchangeData.status, // preserve status
+                        date: date,
+                        time: time,
+                        location: loc,
+                        lat: document.getElementById('lat').value,
+                        lng: document.getElementById('lng').value,
+                        current_user_email: currentUserId
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Meetup details updated & partner notified!', 'success');
+                } else showToast(data.message, 'error');
+            } catch(e) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function updateRequestStatus(newStatus) {
+            try {
+                const res = await fetch('/exchange/update', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        requestId: exchangeId,
+                        status: newStatus
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Request ' + newStatus, 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else showToast(data.message, 'error');
+            } catch(e) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function loadMessages() {
+            if(!exchangeId) return;
+            try {
+                const res = await fetch(`/get-messages?exchange_id=${exchangeId}`);
+                const msgs = await res.json();
+                
+                const box = document.getElementById('chatBox');
+                const wasScrolledToBottom = box.scrollHeight - box.clientHeight <= box.scrollTop + 50;
+
+                if (msgs.length === 0) {
+                    box.innerHTML = `<div class="w-full text-center text-slate-400 text-sm mt-4">Send a message to coordinate your meetup!</div>`;
+                    return;
+                }
+
+                box.innerHTML = msgs.map(m => {
+                    const isMine = m.sender_email === currentUserId;
+                    return `
+                        <div class="chat-message ${isMine ? 'message-sent' : 'message-received shadow-sm'}">
+                            ${m.content}
+                            <div class="${isMine ? 'text-indigo-200' : 'text-slate-400'} text-[10px] mt-1 text-right">
+                                ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                if(wasScrolledToBottom) {
+                    box.scrollTop = box.scrollHeight;
+                }
+            } catch(e) {
+                console.error("Chat sync error");
+            }
+        }
+
+        async function sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const txt = input.value.trim();
+            if(!txt || !partnerEmail) return;
+
+            const btn = document.getElementById('sendBtn');
+            input.disabled = true;
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/send-message', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        exchangeId: exchangeId,
+                        senderEmail: currentUserId,
+                        receiverEmail: partnerEmail,
+                        content: txt
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    input.value = '';
+                    await loadMessages();
+                    const box = document.getElementById('chatBox');
+                    box.scrollTop = box.scrollHeight;
+                }
+            } finally {
+                input.disabled = false;
+                btn.disabled = false;
+                input.focus();
+            }
+        }
+    </script>
+    <div id="otpModal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-4 otp-modal-bg">
+        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl reveal-up">
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Verify Handover</h3>
+            <p class="text-xs text-slate-510 mb-6">Enter the 6-digit code received by your partner.</p>
+            
+            <div class="mb-6">
+                <input type="text" id="otpValue" maxlength="6" placeholder="000000" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl otp-input focus:border-indigo-500 focus:outline-none transition-all">
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeOtpModal()" class="flex-1 py-3 text-sm font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all border-none">Cancel</button>
+                <button onclick="verifyOtp()" class="flex-1 btn-premium btn-premium-indigo py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/30">Verify Code</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let requestId = exchangeId; // From the provided script context
+
+        function initiateCompletion() {
+            if(!confirm("Are you sure you want to mark this handover as completed? An OTP will be sent to your partner.")) return;
+            
+            fetch('/exchange/initiate-completion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId: exchangeId, userId: AppState.getUser().email })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showToast(data.message, 'success');
+                    document.getElementById('otpModal').classList.remove('hidden');
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+
+        function closeOtpModal() {
+            document.getElementById('otpModal').classList.add('hidden');
+        }
+
+        function verifyOtp() {
+            const otp = document.getElementById('otpValue').value;
+            if(otp.length !== 6) {
+                showToast("Please enter a 6-digit code.", "error");
+                return;
+            }
+
+            fetch('/exchange/verify-completion', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ requestId: exchangeId, otp: otp })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    showToast("Exchange completed successfully!", 'success');
+                    closeOtpModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showToast(data.message, 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

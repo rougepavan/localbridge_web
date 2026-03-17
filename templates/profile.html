@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - LocalBridge</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="/static/css/main.css" rel="stylesheet">
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    <link href="/static/css/premium-ui.css" rel="stylesheet">
+</head>
+<body class="mesh-bg">
+
+    <div class="dashboard-layout">
+        <!-- Premium Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <!-- Injected by sidebar.js -->
+                </div>
+                <button class="sidebar-toggle" id="sidebarToggle">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <!-- Injected by sidebar.js -->
+            </nav>
+
+            <div style="padding: 1.5rem 1rem;">
+                <button class="nav-item w-full sidebar-logout text-red-400 hover:text-red-300 hover:bg-red-500/10 justify-start border-none">
+                    <!-- Injected by sidebar.js -->
+                </button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="top-navbar">
+                <button class="md:hidden icon-btn" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+            </header>
+
+            <div class="content-area pt-8">
+                <div class="max-w-4xl mx-auto">
+                    
+                    <div class="mb-8 reveal-fade text-center md:text-left">
+                        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight lg:text-4xl">Account Settings</h1>
+                        <p class="text-slate-500 mt-2 text-lg">Manage your public persona and preferences.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        
+                        <!-- Profile Card -->
+                        <div class="col-span-1 reveal-scale">
+                            <div class="premium-glass rounded-3xl p-8 text-center border-t-4 border-t-indigo-500 h-full relative overflow-hidden">
+                                <div class="absolute inset-0 bg-gradient-to-br from-indigo-50 to-transparent opacity-50 z-0"></div>
+                                <div class="relative z-10">
+                                    <div class="relative w-32 h-32 mx-auto mb-6 group cursor-pointer">
+                                        <img src="" onerror="this.src='https://ui-avatars.com/api/?name=User'" id="profileImg" class="w-32 h-32 rounded-full object-cover shadow-xl border-4 border-white transition-transform group-hover:scale-105">
+                                        <div class="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white" onclick="document.getElementById('profile_image').click()">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                                        </div>
+                                    </div>
+                                    
+                                    <h2 class="text-2xl font-bold tracking-tight text-slate-900" id="profName"></h2>
+                                    <p class="text-slate-500 mb-6 font-medium" id="profEmail"></p>
+                                    
+                                    <div class="grid grid-cols-3 gap-4 border-t border-slate-200 pt-6">
+                                        <div>
+                                            <div class="text-2xl font-bold text-slate-900" id="profItems">0</div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Posted</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-2xl font-bold text-indigo-600" id="profRating">5.0</div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Rating</div>
+                                        </div>
+                                        <div>
+                                            <div class="text-2xl font-bold text-pink-600" id="profTrust">100</div>
+                                            <div class="text-xs text-slate-500 uppercase tracking-widest font-semibold">Trust Score</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Edit Form -->
+                        <div class="col-span-1 lg:col-span-2 reveal-up" style="animation-delay: 0.2s">
+                            <div class="premium-glass rounded-3xl p-8 h-full">
+                                <h3 class="text-lg font-bold text-slate-900 mb-6">Personal Information</h3>
+                                <form id="profile-form" enctype="multipart/form-data">
+                                    <input type="file" id="profile_image" name="image" class="hidden" accept="image/*" onchange="previewAvatar(event)">
+                                    <input type="hidden" name="email" id="emailInput">
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                        <div class="floating-group">
+                                            <input type="text" id="name" name="name" class="floating-input" placeholder=" " required>
+                                            <label class="floating-label">Full Name</label>
+                                        </div>
+                                        <div class="floating-group">
+                                            <input type="text" id="phone" name="phone" class="floating-input" placeholder=" ">
+                                            <label class="floating-label">Phone Label</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mb-5">
+                                        <div class="floating-group">
+                                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required>
+                                            <label class="floating-label">City, State</label>
+                                        </div>
+                                        <div class="floating-group">
+                                            <select id="preferred_exchange" name="preferred_exchange" class="floating-input">
+                                                <option value="Meetup">Public Meetup</option>
+                                                <option value="Delivery">Local Delivery</option>
+                                                <option value="Pickup">Porch Pickup</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="floating-group mb-8">
+                                        <textarea id="bio" name="bio" rows="4" class="floating-input resize-none p-4" placeholder=" "></textarea>
+                                        <label class="floating-label">Short Bio (Introduce yourself)</label>
+                                    </div>
+                                    
+                                    <div class="flex justify-end">
+                                        <button type="submit" id="saveBtn" class="btn-premium btn-premium-indigo py-3 px-8 text-lg font-bold text-white">Save Changes</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Security / Change Password Section -->
+                            <div class="premium-glass rounded-3xl p-8 mt-8 reveal-up" style="animation-delay: 0.3s">
+                                <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                                    Security & Password
+                                </h3>
+                                <form id="password-form" onsubmit="updateUserPassword(event)">
+                                    <div class="space-y-4">
+                                        <div class="floating-group">
+                                            <input type="password" id="old_password" name="old_password" class="floating-input" placeholder=" " required>
+                                            <label class="floating-label">Current Password</label>
+                                        </div>
+                                        <div class="floating-group">
+                                            <input type="password" id="new_password" name="new_password" class="floating-input" placeholder=" " required minlength="6">
+                                            <label class="floating-label">New Password</label>
+                                        </div>
+                                        <div class="flex justify-end">
+                                            <button type="submit" id="passBtn" class="btn-premium btn-premium-indigo py-2 px-6 font-bold text-white">Update Password</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+    <script src="/static/js/animations.js"></script>
+    <script src="/static/js/sidebar.js"></script>
+    <script src="/static/js/dashboard.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const user = AppState.getUser();
+            if(!user) return AppState.requireAuth();
+
+            document.getElementById('emailInput').value = user.email;
+            
+            try {
+                const res = await fetch(`/user-details?email=${user.email}`);
+                const data = await res.json();
+                
+                if(!data.error) {
+                    // Populate UI
+                    document.getElementById('profName').innerText = data.name;
+                    document.getElementById('profEmail').innerText = data.email;
+                    document.getElementById('profItems').innerText = data.posted;
+                    document.getElementById('profRating').innerText = data.rating;
+                    document.getElementById('profTrust').innerText = data.trust;
+                    if(data.profile_image) document.getElementById('profileImg').src = `/static/uploads/${data.profile_image}`;
+                    
+                    // Populate form fields properly triggering floating label placeholder logic
+                    document.getElementById('name').value = data.name;
+                    document.getElementById('phone').value = data.phone || '';
+                    document.getElementById('location').value = data.location;
+                    if(data.preferred_exchange) document.getElementById('preferred_exchange').value = data.preferred_exchange;
+                    document.getElementById('bio').value = data.bio || '';
+                }
+            } catch { showToast('Error loading profile', 'error'); }
+        });
+
+        function previewAvatar(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const img = document.getElementById('profileImg');
+                img.src = reader.result;
+                gsap.from(img, { scale: 0.5, opacity: 0, duration: 0.5, ease: "back.out(2)" });
+            };
+            if(event.target.files[0]) reader.readAsDataURL(event.target.files[0]);
+        }
+
+        document.getElementById('profile-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('saveBtn');
+            btn.innerHTML = 'Saving...';
+            try {
+                const res = await fetch('/update-profile', { method: 'POST', body: new FormData(e.target) });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Profile updated!', 'success');
+                    
+                    // Feedback animation
+                    gsap.to(btn, { scale: 1.05, duration: 0.1, yoyo: true, repeat: 1 });
+                    
+                    setTimeout(() => window.location.reload(), 800);
+                } else showToast(data.message, 'error');
+            } catch { showToast('Error updating', 'error'); }
+            finally { btn.innerHTML = 'Save Changes'; }
+        });
+
+        async function updateUserPassword(e) {
+            e.preventDefault();
+            const btn = document.getElementById('passBtn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = 'Updating...';
+            
+            const user = AppState.getUser();
+            const oldPass = document.getElementById('old_password').value;
+            const newPass = document.getElementById('new_password').value;
+
+            // Password constraints validation
+            const hasCapital = /[A-Z]/.test(newPass);
+            const hasNumber = /\d/.test(newPass);
+            const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(newPass);
+            
+            if (newPass.length < 6 || !hasCapital || !hasNumber || !hasSpecial) {
+                showToast('New password must be at least 6 characters and contain 1 capital, 1 number, and 1 special character.', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/update-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        email: user.email,
+                        old_password: oldPass,
+                        new_password: newPass
+                    })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Password updated successfully!', 'success');
+                    e.target.reset();
+                } else {
+                    showToast(data.message || 'Failed to update password', 'error');
+                }
+            } catch {
+                showToast('Network error', 'error');
+            } finally {
+                btn.innerHTML = originalText;
+            }
+        }
+    </script>
+</body>
+</html>
