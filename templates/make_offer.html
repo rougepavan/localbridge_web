@@ -93,24 +93,48 @@
                                             </div>
                                         </div>
                                         <div class="floating-group">
-                                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required>
+                                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required maxlength="255">
                                             <label class="floating-label" for="location">Meeting Location (Pick on map below)</label>
                                         </div>
                                         <input type="hidden" id="lat" name="lat">
                                         <input type="hidden" id="lng" name="lng">
                                         
-                                        <div id="map-container" class="mb-5 rounded-2xl overflow-hidden border border-slate-200 relative group" style="height: 250px; width: 100%;">
-                                            <div id="map" style="height: 100%; width: 100%;"></div>
-                                            <div class="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
-                                                <input type="text" id="map-search" placeholder="Search for a location..." class="flex-1 text-xs p-2 rounded-lg border border-slate-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                                <button type="button" onclick="searchLocation()" class="btn-premium btn-premium-indigo p-2 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors">
-                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        
+                                        <!-- Inline Map Container -->
+                                        <div id="map-modal" class="relative flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden mb-8 transition-all duration-300" style="height: 250px; z-index: 10;">
+                                            <div id="map-header" class="hidden items-center justify-between p-4 border-b border-slate-100 shadow-sm bg-white shrink-0">
+                                                <h3 class="font-bold text-slate-800 text-lg">Pick Meeting Location</h3>
+                                                <button type="button" onclick="closeMapModal()" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-600 transition-colors">
+                                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                                                 </button>
                                             </div>
-                                            <button type="button" onclick="locateMe()" class="absolute bottom-4 right-4 z-[1000] bg-white p-2 rounded-lg shadow-lg hover:bg-slate-50 transition-colors border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-700 btn-premium py-2 px-4">
-                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                                                Locate Me
-                                            </button>
+                                            
+                                            <div class="relative flex-1  min-h-0">
+                                                <div id="map" class="absolute inset-0" style="z-index:1;"></div>
+                                                
+                                                <!-- Top Search Bar -->
+                                                <div class="absolute top-2 left-2 right-12 z-[1000] flex gap-2">
+                                                    <input type="text" id="map-search" placeholder="Search Pincode, City, or Town..." class="flex-1 text-sm p-2 rounded-lg border border-slate-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/95 backdrop-blur-sm">
+                                                    <button type="button" onclick="searchLocation()" class="bg-indigo-600 text-white px-3 rounded-lg shadow-sm hover:bg-indigo-700 transition-colors flex items-center justify-center">
+                                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                                    </button>
+                                                </div>
+                                                
+                                                <!-- Fullscreen Toggle Icon -->
+                                                <button type="button" onclick="openMapModal()" class="absolute top-2 right-2 z-[1000] bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-sm hover: transition-all border border-slate-200 text-slate-700" title="Expand Map">
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+                                                </button>
+
+                                                <!-- Locate Me -->
+                                                <button type="button" onclick="locateMe()" class="absolute bottom-4 right-2 z-[1000] bg-white/95 backdrop-blur-sm p-2 rounded-lg shadow-sm hover: transition-all border border-slate-200 text-slate-700" title="Locate Me">
+                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                                                </button>
+                                            </div>
+                                            <div id="map-footer" class="hidden p-4 bg-white border-t border-slate-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] shrink-0">
+                                                <button type="button" onclick="closeMapModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 text-sm rounded-xl shadow-lg transition-transform active:scale-[0.98]">
+                                                    Confirm Selected Location
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -182,7 +206,7 @@
                         ${p.quantity ? `<span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-[10px] font-bold border border-indigo-200">${p.quantity} ${p.unit || ''}</span>` : ''}
                     </div>
                     <p class="text-sm text-slate-500 mt-1">${p.category}</p>
-                    <div class="mt-4 p-3 bg-slate-50 rounded-lg text-sm text-slate-600 border border-slate-100">
+                    <div class="mt-4 p-3  rounded-lg text-sm text-slate-600 border border-slate-100">
                         <span class="font-bold text-slate-800">Return Offer expectation:</span><br>
                         ${p.return_offer || 'Open to any fair exchange.'}
                     </div>
@@ -204,17 +228,87 @@
             }
         });
 
+        function openMapModal() {
+            const modal = document.getElementById('map-modal');
+            
+            const placeholder = document.createElement('div');
+            placeholder.id = 'map-placeholder';
+            placeholder.className = 'w-full mb-8';
+            placeholder.style.height = '250px';
+            modal.parentNode.insertBefore(placeholder, modal);
+
+            modal.classList.remove('relative', 'border', 'border-slate-200', 'rounded-xl', 'mb-8');
+            modal.classList.add('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'z-[9999]', 'w-[90%]', 'max-w-2xl', 'rounded-3xl', 'shadow-2xl');
+            modal.style.height = '70vh';
+
+            let backdrop = document.getElementById('map-backdrop');
+            if(!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'map-backdrop';
+                backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9998]';
+                document.body.appendChild(backdrop);
+            }
+            backdrop.style.display = 'block';
+
+            document.getElementById('map-header').classList.remove('hidden');
+            document.getElementById('map-header').classList.add('flex');
+            document.getElementById('map-footer').classList.remove('hidden');
+            
+            // Fix for missing grids: wait for animation then invalidate
+            setTimeout(() => { if(map) map.invalidateSize(); }, 400);
+        }
+
+        function closeMapModal() {
+            const modal = document.getElementById('map-modal');
+            
+            const placeholder = document.getElementById('map-placeholder');
+            if(placeholder) placeholder.remove();
+
+            modal.classList.add('relative', 'border', 'border-slate-200', 'rounded-xl', 'mb-8');
+            modal.classList.remove('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'z-[9999]', 'w-[90%]', 'max-w-2xl', 'rounded-3xl', 'shadow-2xl');
+            modal.style.height = '250px';
+
+            const backdrop = document.getElementById('map-backdrop');
+            if(backdrop) backdrop.style.display = 'none';
+
+            document.getElementById('map-header').classList.add('hidden');
+            document.getElementById('map-header').classList.remove('flex');
+            document.getElementById('map-footer').classList.add('hidden');
+            setTimeout(() => { if(map) map.invalidateSize(); }, 50);
+        }
+
         let map, marker;
         function initMap() {
             // Default center India
             const indiaCenter = [20.5937, 78.9629];
-            map = L.map('map').setView(indiaCenter, 5);
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false,
+                zoomAnimation: false,
+                fadeAnimation: false,
+                markerZoomAnimation: false,
+                inertia: false
+            }).setView(indiaCenter, 5);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
+            // High-quality Open Source Tiles (CartoDB Voyager)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20
             }).addTo(map);
 
-            marker = L.marker(indiaCenter, { draggable: true }).addTo(map);
+            marker = L.marker(indiaCenter, { 
+                draggable: true,
+                icon: L.divIcon({
+                    html: `<div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.7C17.3333 16.2 21 12.2 21 8.5C21 3.8 17.2 0 12.5 0C7.8 0 4 3.8 4 8.5C4 12.2 7.66667 16.2 13 21.7C12.7333 21.9667 12.2667 21.9667 12 21.7Z" fill="#EF4444"/>
+                                <circle cx="12.5" cy="8.5" r="3.5" fill="white"/>
+                            </svg>
+                           </div>`,
+                    className: '',
+                    iconSize: [40, 40],
+                    iconAnchor: [20, 40]
+                })
+            }).addTo(map);
 
             map.on('click', (e) => {
                 const { lat, lng } = e.latlng;
@@ -256,8 +350,8 @@
 
         async function updateLocation(lat, lng, zoom = null) {
             marker.setLatLng([lat, lng]);
-            if(zoom) map.setView([lat, lng], zoom);
-            else map.panTo([lat, lng]);
+            if(zoom) map.setView([lat, lng], zoom, { animate: false });
+            else map.panTo([lat, lng], { animate: false });
             
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
@@ -331,3 +425,5 @@
     </script>
 </body>
 </html>
+
+

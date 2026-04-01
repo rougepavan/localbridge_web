@@ -1,25 +1,32 @@
 import mysql.connector
-import json
 
 DB_CONFIG = {
     "host": "localhost",
     "user": "root",
     "password": "",
-    "database": "web_db"
+    "database": "app_db"
 }
 
-def check_schema():
+def check_db():
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor(dictionary=True)
-        cursor.execute("DESCRIBE users")
-        schema = cursor.fetchall()
-        with open('schema_output.json', 'w') as f:
-            json.dump(schema, f, indent=4)
+        
+        cursor.execute("SELECT count(*) as count FROM users")
+        user_count = cursor.fetchone()['count']
+        print(f"Total Users: {user_count}")
+        
+        cursor.execute("SELECT count(*) as count FROM products")
+        product_count = cursor.fetchone()['count']
+        print(f"Total Products: {product_count}")
+        
+        cursor.execute("SHOW TABLES")
+        tables = cursor.fetchall()
+        print(f"Tables: {tables}")
+        
         conn.close()
-        print("Schema written to schema_output.json")
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Database Error: {e}")
 
 if __name__ == "__main__":
-    check_schema()
+    check_db()

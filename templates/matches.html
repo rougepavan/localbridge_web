@@ -104,12 +104,12 @@
             window.animateFeedCards('.match-card', tab === 'incoming' ? incFeed : outFeed);
         }
 
-        async function updateStatus(id, newStatus, productId) {
+        async function updateStatus(id, newStatus, productId, isSender = false) {
             try {
                 const res = await fetch('/exchange/update', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ requestId: id, status: newStatus })
+                    body: JSON.stringify({ requestId: id, status: newStatus, isSender: isSender })
                 });
                 const data = await res.json();
                 if(data.success) {
@@ -172,6 +172,7 @@
                                         <button onclick="event.stopPropagation(); window.location.href='/product/${m.productId}?match_id=${m.id}'" class="btn-premium btn-premium-indigo py-2 px-6 text-sm flex items-center gap-2 text-white font-bold">
                                             Manage Details &amp; Chat
                                         </button>
+                                        <button onclick="event.stopPropagation(); updateStatus(${m.id}, 'Cancelled', ${m.productId}, ${!isIncoming})" class="btn-premium btn-premium-rose py-2 px-4 text-sm text-white font-bold ml-auto">Cancel Request</button>
                                         ${isIncoming ? `<button onclick="event.stopPropagation(); window.location.href='/product/${m.productId}?match_id=${m.id}'" class="btn-premium btn-premium-emerald py-2 px-4 text-sm text-white font-bold">Mark Complete</button>` : ''}
                                     ` : ''}
                                 </div>

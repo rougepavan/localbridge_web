@@ -9,6 +9,8 @@
     <link href="/static/css/main.css" rel="stylesheet">
     <link href="/static/css/dashboard.css" rel="stylesheet">
     <link href="/static/css/premium-ui.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJbhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
 <body class="mesh-bg">
 
@@ -43,13 +45,16 @@
                 <button class="md:hidden icon-btn" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
                 </button>
-
-                <div class="search-bar hidden md:flex">
+                <div class="search-bar">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                     <input type="text" id="searchInputDesktop" placeholder="Search for items, categories..." oninput="handleSearch(this.value)">
                 </div>
 
                 <div class="nav-actions">
+                    <button onclick="toggleLocationModal()" class="icon-btn magnetic-btn hover:bg-indigo-50 transition-colors flex items-center gap-2 px-3 !w-auto" title="Set Location">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span id="navLocationText" class="text-xs font-bold hidden sm:inline-block max-w-[100px] truncate text-slate-700">Set Location</span>
+                    </button>
                     <button onclick="toggleFilterModal()" class="icon-btn magnetic-btn hover:bg-indigo-50 transition-colors" title="Filter Products">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     </button>
@@ -70,9 +75,8 @@
                     </div>
                 </div>
 
-                <!-- Mobile Search -->
                 <div class="md:hidden mb-6 reveal-fade">
-                    <div class="search-bar flex w-full">
+                    <div class="search-bar flex w-full items-center">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <input type="text" id="searchInputMobile" class="w-full" placeholder="Search for items..." oninput="handleSearch(this.value)">
                     </div>
@@ -85,6 +89,7 @@
                     <button class="category-tab px-5 py-2 rounded-full border border-slate-200 text-slate-600 bg-white font-semibold text-sm hover:bg-slate-50 transition-all" onclick="filterFeed('Powders', this)">Powders</button>
                     <button class="category-tab px-5 py-2 rounded-full border border-slate-200 text-slate-600 bg-white font-semibold text-sm hover:bg-slate-50 transition-all" onclick="filterFeed('Spices', this)">Spices</button>
                     <button class="category-tab px-5 py-2 rounded-full border border-slate-200 text-slate-600 bg-white font-semibold text-sm hover:bg-slate-50 transition-all" onclick="filterFeed('Liquids', this)">Liquids</button>
+                    <button class="category-tab px-5 py-2 rounded-full border border-slate-200 text-slate-600 bg-white font-semibold text-sm hover:bg-slate-50 transition-all" onclick="filterFeed('Others', this)">Others</button>
                 </div>
 
                 <!-- Feed Grid -->
@@ -98,7 +103,7 @@
 
     <!-- Filter Modal Wrapper -->
     <div id="filterModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6">
+        <div class="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 relative">
             <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
                 <h3 class="text-xl font-bold text-slate-800">Filter Items</h3>
                 <button onclick="toggleFilterModal()" class="text-slate-400 hover:text-slate-600 transition-colors">
@@ -147,13 +152,85 @@
         </div>
     </div>
 
+    <!-- Location Modal Wrapper -->
+    <div id="locationModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[150] flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh] border border-slate-100">
+            <div class="flex items-center justify-between p-4 border-b border-slate-100 shadow-sm bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-lg">Pick a Location</h3>
+                <button onclick="toggleLocationModal()" class="p-2 bg-white hover:bg-slate-200 rounded-full text-slate-600 transition-colors shadow-sm">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+            
+            <div class="overflow-y-auto w-full custom-scrollbar flex-1 relative bg-slate-50 flex flex-col">
+                
+                <!-- Saved Locations Section -->
+                <div class="p-6 bg-white border-b border-slate-100 z-10">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-bold text-slate-800">Saved Locations</h4>
+                    </div>
+                    <div id="savedLocationsContainer" class="space-y-3">
+                        <!-- Loading State -->
+                        <div class="text-sm text-slate-500 py-2">Loading locations...</div>
+                    </div>
+                </div>
+
+                <!-- Add New Location Section -->
+                <div class="p-6 bg-slate-50">
+                    <h4 class="font-bold text-slate-800 mb-4">Add New Location</h4>
+                    <div class="flex gap-2 mb-4">
+                        <input type="text" id="newLocLabel" placeholder="e.g. Home, Work" class="w-1/3 text-sm p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500">
+                        <div class="relative flex-1">
+                            <input type="text" id="mapPincode" placeholder="Search Address..." onkeypress="if(event.key === 'Enter') searchHomeLocation()" class="w-full text-sm p-3 pl-10 rounded-xl border border-slate-200 focus:outline-none focus:border-indigo-500">
+                            <svg class="absolute left-3 top-3.5 text-slate-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </div>
+                        <button type="button" onclick="searchHomeLocation()" class="bg-indigo-600 text-white px-4 rounded-xl font-bold hover:bg-indigo-700 transition-colors shadow-md">
+                            Find
+                        </button>
+                    </div>
+                    
+                    <!-- Map area (FORCE SIZING) -->
+                    <div class="relative w-full rounded-xl overflow-hidden border border-slate-200 mb-4 shadow-inner" style="height: 350px !important; min-height: 350px !important;">
+                        <div id="homeMap" class="absolute inset-0 z-0 map-fix" style="height: 350px !important;"></div>
+                        <!-- Fixed Center Pin (Android Style) -->
+                        <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[95%] z-[1001] pointer-events-none drop-shadow-2xl transition-transform duration-200" id="homeMapCenterPin">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.7C17.3333 16.2 21 12.2 21 8.5C21 3.8 17.2 0 12.5 0C7.8 0 4 3.8 4 8.5C4 12.2 7.66667 16.2 13 21.7C12.7333 21.9667 12.2667 21.9667 12 21.7Z" fill="#EF4444" stroke="white" stroke-width="0.5"/>
+                                <circle cx="12" cy="8.5" r="3" fill="white"/>
+                            </svg>
+                        </div>
+                        <div id="homeMapAddressBox" class="absolute top-4 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm p-2 px-3 rounded-lg shadow-lg border border-indigo-100 text-[10px] font-bold text-indigo-700 hidden">
+                            Selected: <span id="homeMapAddressText">...</span>
+                        </div>
+                        <button type="button" onclick="locateHomeMe()" class="absolute bottom-4 right-4 z-[1000] bg-white p-2 px-3 rounded-lg shadow-md hover:bg-slate-50 transition-all border border-slate-100 flex items-center gap-2 text-xs font-bold text-slate-700">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                            Locate Me
+                        </button>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" onclick="checkLocationWithoutSaving()" class="flex-1 py-3 text-sm font-bold text-slate-700 bg-slate-200 hover:bg-slate-300 rounded-xl transition-all active:scale-[0.98]">
+                            Just Check Products
+                        </button>
+                        <button type="button" onclick="saveNewLocationAndSelect()" class="flex-1 btn-premium btn-premium-indigo py-3 rounded-xl shadow-lg transition-transform active:scale-[0.98] text-white font-bold text-sm">
+                            Save & See Products
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+
     <script src="/static/js/app.js"></script>
     <script src="/static/js/animations.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            AppState.requireAuth();
+            // AppState.requireAuth();
             loadFeed();
         });
 
@@ -169,12 +246,27 @@
                 const user = AppState.getUser();
                 const userEmail = user ? user.email : '';
                 
-                const coords = await AppState.getLocation();
+                // FORCE: Immediately use manually selected coordinates from session if available
+                let manualLat = localStorage.getItem('localbridge_lat');
+                let manualLng = localStorage.getItem('localbridge_lng');
+                let coords = null;
+                if (manualLat && manualLng) {
+                    coords = { lat: parseFloat(manualLat), lng: parseFloat(manualLng) };
+                } else {
+                    coords = await AppState.getLocation();
+                }
+
                 let url = `/products?email=${encodeURIComponent(userEmail)}`;
                 if (coords) url += `&lat=${coords.lat}&lng=${coords.lng}`;
                 
                 const response = await fetch(url);
-                window.allProducts = await response.json();
+                const fetchedProducts = await response.json();
+                
+                if (coords) {
+                    window.allProducts = fetchedProducts.filter(p => typeof p.distance === 'number' && p.distance <= 50);
+                } else {
+                    window.allProducts = fetchedProducts;
+                }
                 
                 renderFeed(window.allProducts);
             } catch (err) {
@@ -325,13 +417,15 @@
                             <img src="${safeAvatarSrc}" class="w-10 h-10 rounded-full object-cover shadow-sm" onerror="this.src='https://ui-avatars.com/api/?name=${p.user_name}'">
                             <div class="leading-tight">
                                 <div class="font-semibold text-slate-900 text-sm">${p.user_name}</div>
-                                <div class="text-xs text-slate-500">${p.distance.toFixed(1)} km away</div>
+                                <div class="text-xs text-slate-500">${p.distance > 0 ? p.distance.toFixed(1) + ' km away' : 'Location not set'}</div>
                             </div>
                         </div>
                         <img src="${safeImageSrc}" alt="${p.name}" class="feed-card-image" onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Image+Not+Found'">
                         <div class="feed-card-body">
                             <div class="flex justify-between items-start mb-2">
-                                <h3 class="font-bold text-lg text-slate-900 line-clamp-1">${p.name}</h3>
+                                <a href="/product/${p.id}" class="hover:text-indigo-600 transition-colors">
+                                    <h3 class="font-bold text-lg text-slate-900 line-clamp-1">${p.name}</h3>
+                                </a>
                                 <div class="flex flex-col items-end">
                                     <span class="bg-indigo-50 text-indigo-700 font-semibold text-xs px-2.5 py-1 rounded-full border border-indigo-100">${p.category}</span>
                                     ${p.quantity ? `<span class="text-[10px] text-slate-400 mt-1 font-bold">${p.quantity} ${p.unit || ''}</span>` : ''}
@@ -339,11 +433,11 @@
                             </div>
                             <p class="text-slate-600 text-sm line-clamp-2 mb-4 leading-relaxed">${p.description}</p>
                             
-                            <div class="badge-ai mb-5">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M12 3l1.912 5.886L20 10l-6.088 1.114L12 17l-1.912-5.886L4 10l6.088-1.114z"/>
-                                </svg>
-                                <span>${p.ai_insight || 'AI Verified Quality Item'}</span>
+                            <div class="flex items-center gap-2 mb-4">
+                                ${p.freshness ? `<span class="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+                                    <span class="w-1 h-1 bg-emerald-500 rounded-full animate-pulse"></span> ${p.freshness}
+                                </span>` : ''}
+                                ${p.item_condition ? `<span class="bg-amber-50 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded border border-amber-100">${p.item_condition}</span>` : ''}
                             </div>
 
                             ${p.ownerEmail !== currentUserId ? 
@@ -364,6 +458,263 @@
                     window.animateFeedCards('.feed-card');
                 }
         }
+
+        // --- Location Map & Saved Locations Logic ---
+        let hMap, hMarker, hLat = null, hLng = null;
+        let mapInitialized = false;
+
+        async function toggleLocationModal() {
+            const m = document.getElementById('locationModal');
+            m.classList.toggle('hidden');
+            if(!m.classList.contains('hidden')) {
+                await loadSavedLocations();
+                
+                // Sequence of refreshes to ensure tiles load fully after layout transitions
+                if(!mapInitialized) {
+                    setTimeout(() => {
+                        initHomeMap();
+                        mapInitialized = true;
+                    }, 50);
+                } else {
+                    setTimeout(() => { if(hMap) hMap.invalidateSize(); }, 50);
+                }
+            }
+        }
+
+        async function loadSavedLocations() {
+            const container = document.getElementById('savedLocationsContainer');
+            try {
+                const user = AppState.getUser();
+                if(!user) return;
+                const res = await fetch(`/get-locations?email=${encodeURIComponent(user.email)}`);
+                const locations = await res.json();
+                
+                if(locations.length === 0) {
+                    container.innerHTML = '<div class="text-sm text-slate-500 py-2">No saved locations found. Add one below!</div>';
+                    return;
+                }
+                
+                container.innerHTML = locations.map(loc => `
+                    <div class="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:border-indigo-400 bg-white transition-colors cursor-pointer group" onclick="selectSavedLocation(${loc.lat}, ${loc.lng}, '${loc.address.replace(/'/g, "\\'")}')">
+                        <div class="flex items-center gap-3">
+                            <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">${loc.label || 'Saved Location'}</div>
+                                <div class="text-xs text-slate-500 truncate max-w-[200px]">${loc.address}</div>
+                            </div>
+                        </div>
+                        <button onclick="deleteLocation(event, ${loc.id})" class="text-slate-300 hover:text-red-500 p-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `).join('');
+            } catch(e) {
+                container.innerHTML = '<div class="text-sm text-red-500 py-2">Failed to load locations.</div>';
+            }
+        }
+
+        async function selectSavedLocation(lat, lng, addressText) {
+            localStorage.setItem('localbridge_lat', lat);
+            localStorage.setItem('localbridge_lng', lng);
+            document.getElementById('navLocationText').innerText = addressText || "Selected Location";
+            showToast('Feed location updated!', 'success');
+            toggleLocationModal();
+            await loadFeed();
+        }
+
+        async function deleteLocation(e, id) {
+            e.stopPropagation(); // Prevent select click
+            try {
+                const user = AppState.getUser();
+                const res = await fetch('/delete-location', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email: user.email, id: id })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Location deleted', 'success');
+                    loadSavedLocations();
+                } else showToast(data.message, 'error');
+            } catch(err) { showToast('Error deleting location', 'error'); }
+        }
+
+        async function initHomeMap() {
+            let initialCoords = [20.5937, 78.9629]; 
+            let zoom = 5;
+            
+            const savedCoords = await AppState.getLocation();
+            if(savedCoords) {
+                initialCoords = [savedCoords.lat, savedCoords.lng];
+                hLat = savedCoords.lat; hLng = savedCoords.lng;
+                zoom = 13;
+                reverseGeocodeHome(savedCoords.lat, savedCoords.lng);
+            } else {
+                locateHomeMe(false);
+            }
+
+            hMap = L.map('homeMap').setView(initialCoords, zoom);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(hMap);
+
+            // ResizeObserver to fix 'partial tile' rendering (2-grid issue)
+            const ro = new ResizeObserver(() => {
+                if (hMap) hMap.invalidateSize();
+            });
+            ro.observe(document.getElementById('homeMap'));
+
+            // Track map movement for location selection (Android style)
+            hMap.on('movestart', () => {
+                const pin = document.getElementById('homeMapCenterPin');
+                if(pin) pin.style.transform = 'translate(-50%, -110%) scale(1.1)';
+            });
+
+            hMap.on('move', () => {
+                const center = hMap.getCenter();
+                hLat = center.lat;
+                hLng = center.lng;
+            });
+
+            hMap.on('moveend', () => {
+                const pin = document.getElementById('homeMapCenterPin');
+                if(pin) pin.style.transform = 'translate(-50%, -95%) scale(1.0)';
+                reverseGeocodeHome(hLat, hLng);
+            });
+            
+            setTimeout(() => { if(hMap) hMap.invalidateSize(); }, 50);
+        }
+
+        let mapAddressText = "";
+
+        async function updateHomeLocation(lat, lng, zoom = null) {
+            hLat = lat; hLng = lng;
+            if(zoom) hMap.flyTo([lat, lng], zoom);
+            else hMap.flyTo([lat, lng]);
+            // Reverse geocode handled by moveend
+        }
+
+        async function reverseGeocodeHome(lat, lng) {
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await res.json();
+                if(data && data.address) {
+                    let text = data.address.city || data.address.town || data.address.state_district || data.address.county || "Unknown Location";
+                    mapAddressText = text;
+                } else if(data && data.display_name) {
+                    mapAddressText = data.display_name.split(',')[0];
+                }
+                
+                const box = document.getElementById('homeMapAddressBox');
+                const text = document.getElementById('homeMapAddressText');
+                if(box && text && data.display_name) {
+                    text.innerText = data.display_name;
+                    box.classList.remove('hidden');
+                }
+            } catch(e) {}
+        }
+        
+        async function searchHomeLocation() {
+            let query = document.getElementById('mapPincode').value;
+            if(!query) return;
+            
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const data = await res.json();
+                if(data && data.length > 0) {
+                    updateHomeLocation(parseFloat(data[0].lat), parseFloat(data[0].lon), 13);
+                } else {
+                    showToast('Location not found.', 'error');
+                }
+            } catch(e) { showToast('Search error', 'error'); }
+        }
+
+        function locateHomeMe(verbose = true) {
+            if (!navigator.geolocation) {
+                if(verbose) showToast('Geolocation is not supported by your browser.', 'error');
+                return;
+            }
+            if(verbose) showToast('Detecting...', 'info');
+            navigator.geolocation.getCurrentPosition(pos => {
+                updateHomeLocation(pos.coords.latitude, pos.coords.longitude, 14);
+                if(verbose) showToast('Location detected', 'success');
+            }, err => {
+                if(verbose) showToast('Could not detect location. Please search manually.', 'error');
+            }, { enableHighAccuracy: true });
+        }
+
+        async function checkLocationWithoutSaving() {
+            if(!hLat || !hLng) {
+                showToast('Please pick a location on the map first.', 'error');
+                return;
+            }
+            
+            // Just update the session and feed without hitting /add-location
+            localStorage.setItem('localbridge_lat', hLat);
+            localStorage.setItem('localbridge_lng', hLng);
+            
+            const label = document.getElementById('newLocLabel').value || 'Unsaved Location';
+            document.getElementById('navLocationText').innerText = mapAddressText || label;
+            
+            showToast('Showing products for this area', 'info');
+            toggleLocationModal();
+            await loadFeed();
+        }
+
+        async function saveNewLocationAndSelect() {
+            if(!hLat || !hLng) {
+                showToast('Please pick a location on the map first.', 'error');
+                return;
+            }
+            
+            const label = document.getElementById('newLocLabel').value || 'Other';
+            const user = AppState.getUser();
+            
+            // 1. Save to DB
+            try {
+                const res = await fetch('/add-location', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        email: user.email,
+                        label: label,
+                        address: mapAddressText || 'Custom Location',
+                        lat: hLat,
+                        lng: hLng
+                    })
+                });
+                const data = await res.json();
+                if(!data.success) {
+                    showToast(data.message, 'error');
+                    return; // Stop if 5 limits reached
+                }
+                
+                // 2. Select it as active location and refresh feed
+                selectSavedLocation(hLat, hLng, mapAddressText || label);
+                
+            } catch(e) {
+                showToast('Network error while saving location', 'error');
+            }
+        }
+        
+        // Auto update nav location text on load if coords exist
+        document.addEventListener('DOMContentLoaded', async () => {
+             const coords = await AppState.getLocation();
+             if(coords) {
+                  try {
+                       const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`);
+                       const data = await res.json();
+                       if(data && data.address) {
+                           let text = data.address.city || data.address.town || data.address.state_district || "Unknown";
+                           const p = document.getElementById('navLocationText');
+                           if(p) p.innerText = text;
+                       }
+                  } catch(e) {}
+             }
+        });
     </script>
 </body>
 </html>

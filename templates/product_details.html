@@ -109,8 +109,11 @@
                                 <img id="productImage" src="" class="w-24 h-24 object-cover rounded-xl shadow-sm bg-slate-100 flex-shrink-0" />
                                 <div>
                                     <h4 id="productName" class="font-bold text-slate-900 text-xl leading-tight">...</h4>
-                                    <div class="mt-2 mb-3 text-xs font-semibold px-2 py-1 bg-indigo-50 text-indigo-700 rounded w-fit capitalize" id="exchangeStatus">Status</div>
-                                    <p id="productDescription" class="text-sm text-slate-600 leading-relaxed"></p>
+                                    <div class="flex items-center gap-3 mt-3">
+                                        <div class="text-xs font-semibold px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full border border-indigo-100 capitalize" id="exchangeStatus">Status</div>
+                                        <div class="text-xs font-semibold px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 hidden" id="freshnessBadge"></div>
+                                    </div>
+                                    <p id="productDescription" class="text-sm text-slate-600 leading-relaxed mt-4"></p>
                                 </div>
                             </div>
                             
@@ -138,7 +141,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label text-sm text-slate-600">Location (Pick on map below)</label>
-                                        <input type="text" id="meetLoc" placeholder="e.g. Starbucks downtown" class="form-input text-sm" required>
+                                        <input type="text" id="meetLoc" placeholder="e.g. Starbucks downtown" class="form-input text-sm" required maxlength="255">
                                     </div>
                                     <input type="hidden" id="lat" name="lat">
                                     <input type="hidden" id="lng" name="lng">
@@ -146,12 +149,12 @@
                                     <div id="meetup-map-container" class="rounded-xl overflow-hidden border border-slate-200 relative group" style="height: 200px; width: 100%;">
                                         <div id="meetup-map" style="height: 100%; width: 100%;"></div>
                                         <div class="absolute top-2 left-2 right-2 z-[1000] flex gap-1.5">
-                                            <input type="text" id="map-search" placeholder="Search meetup point..." class="flex-1 text-[10px] p-1.5 rounded border border-slate-200 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                                            <input type="text" id="map-search" placeholder="Search Pincode, City, or Town..." class="flex-1 text-[10px] p-1.5 rounded border border-slate-200 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
                                             <button type="button" onclick="searchLocation()" class="bg-indigo-600 text-white p-1.5 rounded shadow hover:bg-indigo-700 transition-colors">
                                                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                                             </button>
                                         </div>
-                                        <button type="button" onclick="locateMe()" class="absolute bottom-2 right-2 z-[1000] bg-white p-1.5 rounded shadow hover:bg-slate-50 transition border border-slate-200 flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
+                                        <button type="button" onclick="locateMe()" class="absolute bottom-2 right-2 z-[1000] bg-white p-1.5 rounded shadow hover: transition border border-slate-200 flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
                                             Locate
                                         </button>
@@ -173,7 +176,7 @@
                     </div>
 
                     <!-- Right Column: Chat System -->
-                    <div class="lg:col-span-2">
+                    <div class="lg:col-span-2" id="chatColumn">
                         <div class="premium-glass p-6 h-full flex flex-col">
                             <div class="flex items-center gap-3 border-b border-slate-100 pb-4 mb-4">
                                 <img id="partnerAvatar" src="" class="w-10 h-10 rounded-full bg-slate-100 object-cover border border-slate-200">
@@ -189,7 +192,7 @@
                             </div>
 
                             <form id="chatForm" onsubmit="sendMessage(event)" class="mt-auto pt-4 border-t border-slate-100 flex gap-3">
-                                <input type="text" id="chatInput" placeholder="Type your message..." class="form-input flex-grow text-sm shadow-sm" required>
+                                <input type="text" id="chatInput" placeholder="Type your message..." class="form-input flex-grow text-sm shadow-sm" required maxlength="1000">
                                 <button type="submit" class="btn-premium btn-premium-indigo px-5 py-2.5 rounded-xl text-white" id="sendBtn">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                                 </button>
@@ -209,25 +212,37 @@
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script>
+        // Injected from Flask
+        const serverProductId = "{{ product_id }}";
         const urlParams = new URLSearchParams(window.location.search);
-        const exchangeId = urlParams.get('match_id') || urlParams.get('id');
+        
+        // Priority: match_id (exchange view) > id (query param product view) > serverProductId (path-based product view)
+        const exchangeId = urlParams.get('match_id');
+        const productId = urlParams.get('id') || (serverProductId !== "None" ? serverProductId : null);
+        
         let currentUserId = null;
         let partnerEmail = null;
         let exchangeData = null;
-        let messagePolling = null;
-
+        
         document.addEventListener("DOMContentLoaded", async () => {
             AppState.requireAuth();
             currentUserId = AppState.getUser().email;
             initMaps();
             
-            if(!exchangeId) {
-                window.location.href = '/matches';
-                return;
+            if (exchangeId) {
+                // Private Exchange View
+                await loadExchangeDetails();
+                loadMessages(); // non-blocking
+            } else if (productId) {
+                // Public Product View
+                await loadPublicProductDetails();
+                // Hide exchange specific UI
+                document.getElementById('chatColumn')?.classList.add('hidden'); // Hide Chat
+                document.getElementById('meetupForm')?.closest('.premium-glass')?.classList.add('hidden'); // Hide Meetup details
+                document.getElementById('pageTitle').textContent = "Product Details";
+            } else {
+                window.location.href = '/dashboard';
             }
-
-            await loadDetails();
-            await loadMessages();
         });
 
         let productMap, productMarker;
@@ -238,14 +253,60 @@
             const indiaCenter = [20.5937, 78.9629];
             
             // Product View Map
-            productMap = L.map('product-map').setView(indiaCenter, 5);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(productMap);
-            productMarker = L.marker(indiaCenter).addTo(productMap);
+            productMap = L.map('product-map', {
+                zoomControl: false,
+                attributionControl: false,
+                zoomAnimation: false,
+                fadeAnimation: false,
+                inertia: false
+            }).setView(indiaCenter, 5);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20
+            }).addTo(productMap);
+
+            productMarker = L.marker(indiaCenter, {
+                icon: L.divIcon({
+                    html: `<div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.7C17.3333 16.2 21 12.2 21 8.5C21 3.8 17.2 0 12.5 0C7.8 0 4 3.8 4 8.5C4 12.2 7.66667 16.2 13 21.7C12.7333 21.9667 12.2667 21.9667 12 21.7Z" fill="#3B82F6"/>
+                                <circle cx="12.5" cy="8.5" r="3.5" fill="white"/>
+                            </svg>
+                           </div>`,
+                    className: '',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 24]
+                })
+            }).addTo(productMap);
 
             // Meetup Picker Map
-            meetupMap = L.map('meetup-map').setView(indiaCenter, 5);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(meetupMap);
-            meetupMarker = L.marker(indiaCenter, { draggable: true }).addTo(meetupMap);
+            meetupMap = L.map('meetup-map', {
+                zoomControl: false,
+                attributionControl: false,
+                zoomAnimation: false,
+                fadeAnimation: false,
+                markerZoomAnimation: false,
+                inertia: false
+            }).setView(indiaCenter, 5);
+
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20
+            }).addTo(meetupMap);
+
+            meetupMarker = L.marker(indiaCenter, { 
+                draggable: true,
+                icon: L.divIcon({
+                    html: `<div style="filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 21.7C17.3333 16.2 21 12.2 21 8.5C21 3.8 17.2 0 12.5 0C7.8 0 4 3.8 4 8.5C4 12.2 7.66667 16.2 13 21.7C12.7333 21.9667 12.2667 21.9667 12 21.7Z" fill="#EF4444"/>
+                                <circle cx="12.5" cy="8.5" r="3.5" fill="white"/>
+                            </svg>
+                           </div>`,
+                    className: '',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32]
+                })
+            }).addTo(meetupMap);
 
             meetupMap.on('click', (e) => {
                 const { lat, lng } = e.latlng;
@@ -256,6 +317,12 @@
                 const { lat, lng } = meetupMarker.getLatLng();
                 updateMeetupLocation(lat, lng);
             });
+
+            // Ensure maps correct size on init
+            setTimeout(() => {
+                productMap.invalidateSize();
+                meetupMap.invalidateSize();
+            }, 500);
         }
 
         function locateMe(isManual = true) {
@@ -284,8 +351,8 @@
 
         async function updateMeetupLocation(lat, lng, zoom = null) {
             meetupMarker.setLatLng([lat, lng]);
-            if(zoom) meetupMap.setView([lat, lng], zoom);
-            else meetupMap.panTo([lat, lng]);
+            if(zoom) meetupMap.setView([lat, lng], zoom, { animate: false });
+            else meetupMap.panTo([lat, lng], { animate: false });
             
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
@@ -318,55 +385,32 @@
             }
         }
 
-        async function loadDetails() {
+        async function loadExchangeDetails() {
             try {
                 const res = await fetch(`/exchange-details-data?id=${exchangeId}`);
                 if (!res.ok) throw new Error('Failed to load exchange data');
                 exchangeData = await res.json();
-
-                // Set UI
-                const isSender = exchangeData.sender_email === currentUserId;
+                
+                // Set UI for Exchange Partner View
+                const isSender = exchangeData.sender_email.toLowerCase() === currentUserId.toLowerCase();
                 partnerEmail = isSender ? exchangeData.receiver_email : exchangeData.sender_email;
                 const pName = isSender ? exchangeData.receiver_name : exchangeData.sender_name;
                 const pAvatar = (isSender ? exchangeData.receiver_avatar : exchangeData.sender_avatar) || `https://ui-avatars.com/api/?name=${pName}`;
 
                 document.getElementById('productName').textContent = exchangeData.productName;
                 document.getElementById('productImage').src = `/static/uploads/${exchangeData.productImage}`;
-                
-                // Fetch full product description from the /product-details endpoint since exchangeData might not have it
-                try {
-                    const pRes = await fetch(`/product-details?id=${exchangeData.product_id}`);
-                    if(pRes.ok) {
-                        const pData = await pRes.json();
-                        document.getElementById('productDescription').textContent = pData.description || 'No description provided.';
-                        
-                        // Update product map if lat/lng available
-                        if(pData.lat && pData.lng) {
-                            const pos = [pData.lat, pData.lng];
-                            productMarker.setLatLng(pos);
-                            productMap.setView(pos, 13);
-                        } else {
-                            document.getElementById('product-map').style.display = 'none';
-                        }
-                    } else {
-                        document.getElementById('productDescription').textContent = 'No description provided.';
-                        document.getElementById('product-map').style.display = 'none';
-                    }
-                } catch(e) {
-                    document.getElementById('productDescription').textContent = '';
-                    document.getElementById('product-map').style.display = 'none';
-                }
-
                 document.getElementById('exchangeStatus').textContent = exchangeData.status;
 
                 let sColor = 'bg-amber-50 text-amber-700';
                 if(exchangeData.status === 'Accepted') sColor = 'bg-green-50 text-green-700';
                 if(exchangeData.status === 'Completed') sColor = 'bg-slate-100 text-slate-700';
-                document.getElementById('exchangeStatus').className = `mt-2 text-xs font-semibold px-2 py-1 rounded w-fit ${sColor}`;
+                document.getElementById('exchangeStatus').className = `text-xs font-semibold px-2 py-1 rounded w-fit capitalize ${sColor}`;
+
+                // Fetch full product description
+                await loadPublicProductDetails(exchangeData.product_id);
 
                 let actionBarHTML = '';
                 if(exchangeData.status === 'Requested' && !isSender) {
-                    // Receiver of the request looking at details
                     actionBarHTML = `
                         <div class="mt-5 flex gap-3 pt-4 border-t border-slate-100">
                             <button onclick="updateRequestStatus('Declined')" class="flex-1 py-2 text-sm rounded-lg font-semibold text-slate-700 bg-slate-100 hover:bg-red-50 hover:text-red-600 transition-colors">Decline Request</button>
@@ -374,8 +418,12 @@
                         </div>
                     `;
                 } else if (exchangeData.status === 'Requested' && isSender) {
+                    actionBarHTML = `<div class="mt-5 pt-4 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-100">Waiting for owner response...</div>`;
+                } else if (exchangeData.status === 'Accepted') {
                     actionBarHTML = `
-                        <div class="mt-5 pt-4 text-center text-xs text-slate-500 font-semibold uppercase tracking-wider border-t border-slate-100">Waiting for owner response...</div>
+                        <div class="mt-5 flex gap-3 pt-4 border-t border-slate-100">
+                            <button onclick="updateRequestStatus('Cancelled')" class="flex-1 py-2 text-sm rounded-lg font-semibold text-white bg-rose-500 hover:bg-rose-600 transition-colors">Cancel Exchange</button>
+                        </div>
                     `;
                 }
                 document.getElementById('actionBarContainer').innerHTML = actionBarHTML;
@@ -387,30 +435,90 @@
                 document.getElementById('partnerName').textContent = pName;
                 document.getElementById('partnerAvatar').src = pAvatar.includes('https') ? pAvatar : `/static/uploads/${pAvatar}`;
 
-                // Update Meetup Picker Map
                 if(exchangeData.lat && exchangeData.lng) {
-                    const pos = [exchangeData.lat, exchangeData.lng];
-                    meetupMarker.setLatLng(pos);
-                    meetupMap.setView(pos, 13);
-                    document.getElementById('lat').value = exchangeData.lat;
-                    document.getElementById('lng').value = exchangeData.lng;
+                    updateMeetupLocation(exchangeData.lat, exchangeData.lng, 13);
                 }
 
-                // --- Completion Section Visibility ---
                 const compSec = document.getElementById('completionSection');
-                const isOwner = exchangeData.receiver_email === currentUserId;
-                
-                if(exchangeData.status === 'Accepted' && isOwner) {
-                    compSec.classList.remove('hidden');
-                } else if(exchangeData.status === 'Completed') {
+                const isOwner = exchangeData.receiver_email.toLowerCase() === currentUserId.toLowerCase();
+                if(exchangeData.status === 'Accepted' && isOwner) compSec.classList.remove('hidden');
+                else if(exchangeData.status === 'Completed') {
                     compSec.innerHTML = '<div class="p-3 bg-emerald-50 text-emerald-700 rounded-xl text-center font-bold text-sm">🤝 Exchange Completed</div>';
                     compSec.classList.remove('hidden');
                 }
-
             } catch(e) {
                 console.error(e);
                 showToast('Error loading details.', 'error');
             }
+        }
+
+        async function loadPublicProductDetails(targetProductId = null) {
+            const pid = targetProductId || productId;
+            if(!pid) return;
+            try {
+                const res = await fetch(`/product-details-data?id=${pid}`);
+                if (!res.ok) throw new Error('Product not found');
+                const p = await res.json();
+                
+                document.getElementById('productName').textContent = p.name;
+                document.getElementById('productImage').src = p.image_name ? `/static/uploads/${p.image_name}` : 'https://placehold.co/400x300';
+                document.getElementById('productDescription').textContent = p.description || 'No description provided.';
+                
+                if(p.freshness) {
+                    const fb = document.getElementById('freshnessBadge');
+                    fb.textContent = p.freshness;
+                    fb.classList.remove('hidden');
+                }
+
+                if(p.lat && p.lng) {
+                    const pos = [parseFloat(p.lat), parseFloat(p.lng)];
+                    productMarker.setLatLng(pos);
+                    productMap.setView(pos, 13);
+                } else {
+                    document.getElementById('product-map').closest('div').style.display = 'none';
+                }
+
+                // Add "Make an Offer" button if in public view
+                if(!exchangeId) {
+                    const isOwner = p.ownerEmail === currentUserId;
+                    document.getElementById('actionBarContainer').innerHTML = isOwner ? 
+                        `<div class="mt-5 pt-4 border-t border-slate-100">
+                            <button onclick="deleteListing(${p.id})" class="w-full btn-premium py-3 text-sm text-center block text-white font-bold rounded-xl shadow-lg bg-rose-500 hover:bg-rose-600 transition-colors flex items-center justify-center gap-2">
+                                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                Delete Listing
+                            </button>
+                        </div>` : 
+                        `<div class="mt-5 pt-4 border-t border-slate-100">
+                            <a href="/make-offer?id=${p.id}" class="w-full btn-premium btn-premium-indigo py-3 text-sm text-center block text-white font-bold rounded-xl shadow-lg">Make an Offer</a>
+                        </div>`;
+                }
+
+                // --- Premium Motion/GSAP Animations ---
+                gsap.from("#productImage", { duration: 0.8, y: 20, opacity: 0, ease: "back.out(1.7)" });
+                gsap.from("#productName", { duration: 0.6, x: -20, opacity: 0, delay: 0.2 });
+                gsap.from("#productDescription", { duration: 0.6, y: 10, opacity: 0, delay: 0.3 });
+                gsap.from(".premium-glass", { duration: 0.8, opacity: 0, stagger: 0.15, y: 30, ease: "power2.out" });
+                
+            } catch(e) {
+                console.error(e);
+                if(!targetProductId) showToast('Could not load product.', 'error');
+            }
+        }
+
+        async function deleteListing(pid) {
+            if(!confirm("Are you sure you want to permanently delete this listing?")) return;
+            try {
+                const res = await fetch('/delete-product', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: pid })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    showToast('Listing deleted successfully', 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 1000);
+                } else showToast('Failed to delete', 'error');
+            } catch(e) { showToast('Error deleting listing', 'error'); }
         }
 
         async function updateMeetup(e) {
@@ -477,17 +585,24 @@
                     return;
                 }
 
-                box.innerHTML = msgs.map(m => {
-                    const isMine = m.sender_email === currentUserId;
+                const messagesHTML = msgs.map(m => {
+                    const isMine = m.sender_email.toLowerCase() === currentUserId.toLowerCase();
+                    const alignCls = isMine ? 'justify-end' : 'justify-start';
+                    const bubbleCls = isMine ? 'bg-indigo-600 text-white rounded-br-none shadow-md' 
+                                             : 'bg-indigo-50 text-slate-800 rounded-bl-none border border-indigo-100';
+                    const timeCls = isMine ? 'text-indigo-200' : 'text-slate-400';
                     return `
-                        <div class="chat-message ${isMine ? 'message-sent' : 'message-received shadow-sm'}">
-                            ${m.content}
-                            <div class="${isMine ? 'text-indigo-200' : 'text-slate-400'} text-[10px] mt-1 text-right">
-                                ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        <div class="flex ${alignCls} mb-3">
+                            <div class="max-w-[70%] p-3 rounded-xl ${bubbleCls}">
+                                ${m.content}
+                                <div class="${timeCls} text-[10px] mt-1 text-right">
+                                    ${new Date(m.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                </div>
                             </div>
                         </div>
                     `;
                 }).join('');
+                box.innerHTML = messagesHTML;
 
                 if(wasScrolledToBottom) {
                     box.scrollTop = box.scrollHeight;
@@ -532,24 +647,65 @@
             }
         }
     </script>
-    <div id="otpModal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-4 otp-modal-bg">
-        <div class="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl reveal-up">
-            <h3 class="text-xl font-bold text-slate-800 mb-2">Verify Handover</h3>
-            <p class="text-xs text-slate-510 mb-6">Enter the 6-digit code received by your partner.</p>
+    <div id="otpModal" class="fixed inset-0 z-[2000] hidden flex items-center justify-center p-4 otp-modal-bg animate-fade-in">
+        <div class="bg-white rounded-[2rem] p-10 max-w-md w-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-slate-100 relative overflow-hidden">
+            <!-- Decorative background element -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-indigo-50 rounded-full opacity-50"></div>
             
-            <div class="mb-6">
-                <input type="text" id="otpValue" maxlength="6" placeholder="000000" class="w-full p-4 bg-slate-50 border-2 border-slate-100 rounded-2xl otp-input focus:border-indigo-500 focus:outline-none transition-all">
-            </div>
+            <div class="relative z-10">
+                <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
 
-            <div class="flex gap-3">
-                <button onclick="closeOtpModal()" class="flex-1 py-3 text-sm font-bold text-slate-500 bg-slate-100 rounded-xl hover:bg-slate-200 transition-all border-none">Cancel</button>
-                <button onclick="verifyOtp()" class="flex-1 btn-premium btn-premium-indigo py-3 text-sm font-bold text-white shadow-lg shadow-indigo-600/30">Verify Code</button>
+                <h3 class="text-2xl font-black text-slate-900 mb-2">Final Step: Verify</h3>
+                <p class="text-slate-500 text-sm mb-8 leading-relaxed">To complete this exchange, please enter the <b>6-digit verification code</b> displayed on your partner's device.</p>
+                
+                <div class="mb-8">
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Handover Code</label>
+                    <input type="tel" id="otpValue" maxlength="6" pattern="^\d{6}$" title="Please enter a valid 6-digit confirmation code" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;" class="w-full p-5  border-2 border-slate-100 rounded-2xl text-center text-3xl font-black tracking-[0.4em] text-indigo-600 focus:border-indigo-500 focus:bg-white focus:outline-none transition-all shadow-inner placeholder:text-slate-200">
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <button onclick="verifyOtp()" class="w-full btn-premium btn-premium-indigo py-4 text-base font-bold text-white shadow-xl shadow-indigo-600/30 rounded-2xl">
+                        Verify & Complete Trade
+                    </button>
+                    <button onclick="closeOtpModal()" class="w-full py-3 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all border-none bg-transparent">
+                        Cancel Verification
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="fixed inset-0 z-[2500] hidden flex items-center justify-center p-4 otp-modal-bg animate-fade-in">
+        <div class="bg-white rounded-[2rem] p-10 max-w-sm w-full shadow-[0_25px_50px_-12px_rgba(0,0,0,0.25)] border border-slate-100 relative overflow-hidden text-center">
+            <div class="absolute -top-16 -right-16 w-32 h-32 bg-amber-50 rounded-full opacity-60"></div>
+            <div class="relative z-10">
+                <h3 class="text-2xl font-black text-slate-900 mb-2">Rate Your Partner</h3>
+                <p class="text-slate-500 text-sm mb-6 leading-relaxed">How was your experience trading with <b id="ratingPartnerName"></b>?</p>
+                
+                <div class="flex justify-center gap-2 mb-8" id="starContainer">
+                    <button onclick="setRating(1)" class="star-btn text-4xl text-slate-300 hover:text-amber-400 transition-colors focus:outline-none">★</button>
+                    <button onclick="setRating(2)" class="star-btn text-4xl text-slate-300 hover:text-amber-400 transition-colors focus:outline-none">★</button>
+                    <button onclick="setRating(3)" class="star-btn text-4xl text-slate-300 hover:text-amber-400 transition-colors focus:outline-none">★</button>
+                    <button onclick="setRating(4)" class="star-btn text-4xl text-slate-300 hover:text-amber-400 transition-colors focus:outline-none">★</button>
+                    <button onclick="setRating(5)" class="star-btn text-4xl text-slate-300 hover:text-amber-400 transition-colors focus:outline-none">★</button>
+                </div>
+                
+                <button onclick="submitTradeRating()" class="w-full py-4 text-base font-bold text-white shadow-xl rounded-2xl mb-3 bg-amber-500 hover:bg-amber-600 transition-colors flex items-center justify-center gap-2">
+                    Submit Rating
+                </button>
+                <button onclick="skipRating()" class="w-full py-2 text-sm font-bold text-slate-400 hover:text-slate-600 transition-all border-none bg-transparent">
+                    Skip
+                </button>
             </div>
         </div>
     </div>
 
     <script>
         let requestId = exchangeId; // From the provided script context
+        let currentSelectedRating = 0;
 
         function initiateCompletion() {
             if(!confirm("Are you sure you want to mark this handover as completed? An OTP will be sent to your partner.")) return;
@@ -557,7 +713,7 @@
             fetch('/exchange/initiate-completion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requestId: exchangeId, userId: AppState.getUser().email })
+                body: JSON.stringify({ exchangeId: exchangeId, userId: AppState.getUser().email })
             })
             .then(res => res.json())
             .then(data => {
@@ -584,19 +740,58 @@
             fetch('/exchange/verify-completion', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ requestId: exchangeId, otp: otp })
+                body: JSON.stringify({ exchangeId: exchangeId, otp: otp })
             })
             .then(res => res.json())
             .then(data => {
                 if(data.success) {
                     showToast("Exchange completed successfully!", 'success');
                     closeOtpModal();
-                    setTimeout(() => location.reload(), 1500);
+                    document.getElementById('ratingPartnerName').textContent = document.getElementById('partnerName').textContent;
+                    document.getElementById('ratingModal').classList.remove('hidden');
                 } else {
                     showToast(data.message, 'error');
                 }
             });
         }
+
+        function setRating(val) {
+            currentSelectedRating = val;
+            const stars = document.querySelectorAll('.star-btn');
+            stars.forEach((s, idx) => {
+                if (idx < val) {
+                    s.classList.remove('text-slate-300');
+                    s.classList.add('text-amber-400');
+                } else {
+                    s.classList.add('text-slate-300');
+                    s.classList.remove('text-amber-400');
+                }
+            });
+        }
+
+        function submitTradeRating() {
+            if (currentSelectedRating === 0) {
+                showToast('Please select a rating or skip.', 'error');
+                return;
+            }
+            fetch('/submit-rating', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: partnerEmail, rating: currentSelectedRating })
+            }).then(r=>r.json()).then(data => {
+                if(data.success) showToast('Rating submitted successfully!', 'success');
+                setTimeout(() => location.reload(), 1000);
+            }).catch(e => {
+                showToast('Error submitting rating', 'error');
+                setTimeout(() => location.reload(), 1000);
+            });
+        }
+
+        function skipRating() {
+            location.reload();
+        }
     </script>
 </body>
 </html>
+
+

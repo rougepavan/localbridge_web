@@ -103,6 +103,11 @@
     <script src="/static/js/app.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            // Fail-safe redirect: if GSAP fails, ensure we still move on after 3.5s
+            setTimeout(() => {
+                window.location.href = '/auth-choice';
+            }, 3500);
+
             // Generate subtle CSS particles
             const pContainer = document.getElementById('particles');
             for(let i = 0; i < 40; i++) {
@@ -115,32 +120,33 @@
                 pContainer.appendChild(p);
                 
                 // Slow orbit via GSAP
-                gsap.to(p, {
-                    y: `-${Math.random() * 100 + 50}`,
-                    x: `+=${Math.random() * 60 - 30}`,
-                    opacity: 0,
-                    duration: Math.random() * 5 + 3,
-                    repeat: -1,
-                    ease: "none",
-                    delay: Math.random() * 2
-                });
+                if(window.gsap) {
+                    gsap.to(p, {
+                        y: `-${Math.random() * 100 + 50}`,
+                        x: `+=${Math.random() * 60 - 30}`,
+                        opacity: 0,
+                        duration: Math.random() * 5 + 3,
+                        repeat: -1,
+                        ease: "none",
+                        delay: Math.random() * 2
+                    });
+                }
             }
 
-            // Cinematic Main Timeline
-            const tl = gsap.timeline({
-                onComplete: () => {
-                    // Redirect logic
-                    setTimeout(() => {
-                        window.location.href = AppState.getUser() ? '/dashboard' : '/auth-choice';
-                    }, 400);
-                }
-            });
+            if(window.gsap) {
+                // Cinematic Main Timeline
+                const tl = gsap.timeline({
+                    onComplete: () => {
+                        setTimeout(() => window.location.href = '/auth-choice', 400);
+                    }
+                });
 
-            tl.from("#logoObj", { scale: 0, opacity: 0, rotation: 45, duration: 1.2, ease: "elastic.out(1, 0.5)" })
-              .from("#logoObj", { boxShadow: "0 0 0px rgba(79,70,229,0)", duration: 1 })
-              .from("#textItems h1", { y: 20, opacity: 0, duration: 0.8, ease: "power3.out" }, "-=0.6")
-              .from("#textItems p", { y: 15, opacity: 0, duration: 0.6, ease: "power3.out" }, "-=0.4")
-              .to("#progressBar", { width: "100%", duration: 1.5, ease: "power2.inOut" }, "-=0.2");
+                tl.from("#logoObj", { scale: 0, opacity: 0, rotation: 45, duration: 1.2, ease: "elastic.out(1, 0.5)" })
+                  .from("#logoObj", { boxShadow: "0 0 0px rgba(79,70,229,0)", duration: 1 })
+                  .from("#textItems h1", { y: 20, opacity: 0, duration: 0.8, ease: "power3.out" }, "-=0.6")
+                  .from("#textItems p", { y: 15, opacity: 0, duration: 0.6, ease: "power3.out" }, "-=0.4")
+                  .to("#progressBar", { width: "100%", duration: 1.5, ease: "power2.inOut" }, "-=0.2");
+            }
         });
     </script>
 </body>

@@ -74,7 +74,7 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-5 reveal-up">
                                 <div class="floating-group">
-                                    <input type="text" id="name" name="name" class="floating-input bg-white" placeholder=" " required>
+                                    <input type="text" id="name" name="name" class="floating-input bg-white" placeholder=" " required maxlength="100">
                                     <label class="floating-label" for="name">Item Title</label>
                                 </div>
                                 <div class="floating-group">
@@ -97,7 +97,7 @@
                             <!-- Quantity Field -->
                             <div id="quantity-section" class="grid grid-cols-2 gap-5 reveal-up hidden mb-5">
                                 <div class="floating-group">
-                                    <input type="number" id="quantity" name="quantity" class="floating-input bg-white" placeholder=" " step="0.01">
+                                    <input type="number" id="quantity" name="quantity" class="floating-input bg-white" placeholder=" " step="0.01" min="0.01">
                                     <label class="floating-label" for="quantity">Quantity</label>
                                 </div>
                                 <div class="floating-group">
@@ -107,27 +107,71 @@
                                 </div>
                             </div>
 
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5 reveal-up">
+                                <div class="floating-group">
+                                    <input type="tel" id="pincode" name="pincode" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" pattern="^\d{5,6}$" title="Please enter a valid 5 or 6 digit pincode" maxlength="6">
+                                    <label class="floating-label" for="pincode">Pincode</label>
+                                </div>
+                                <div class="floating-group">
+                                    <input type="text" id="city" name="city" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" pattern="^[a-zA-Z\s]+$" title="Please enter a valid city name" maxlength="100">
+                                    <label class="floating-label" for="city">City</label>
+                                </div>
+                                <div class="floating-group">
+                                    <input type="text" id="state" name="state" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" pattern="^[a-zA-Z\s]+$" title="Please enter a valid state name" maxlength="100">
+                                    <label class="floating-label" for="state">State</label>
+                                </div>
+                            </div>
+
                             <div class="reveal-up mb-5">
                                 <div class="floating-group">
-                                    <input type="text" id="location" name="location" class="floating-input bg-white" placeholder=" " required>
-                                    <label class="floating-label" for="location">Your Location (Pick on map below)</label>
+                                    <input type="text" id="location" name="location" class="floating-input bg-white" placeholder=" " required maxlength="255">
+                                    <label class="floating-label" for="location">Exact Address (Use map or inputs above)</label>
                                 </div>
                                 <input type="hidden" id="lat" name="lat">
                                 <input type="hidden" id="lng" name="lng">
                             </div>
                                 
-                                <div id="map-container" class="reveal-up mb-5 rounded-2xl overflow-hidden border border-slate-200 relative group" style="height: 300px; width: 100%;">
-                                    <div id="map" style="height: 100%; width: 100%;"></div>
-                                    <div class="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
-                                        <input type="text" id="map-search" placeholder="Search for a location..." class="flex-1 text-xs p-2 rounded-lg border border-slate-200 shadow-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                        <button type="button" onclick="searchLocation()" class="btn-premium btn-premium-indigo p-2 rounded-lg shadow-lg hover:bg-indigo-700 transition-colors">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                
+                                <button type="button" onclick="openMapModal()" class="w-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold py-4 px-4 rounded-xl border-2 border-dashed border-indigo-200 transition-all flex items-center justify-center gap-2 mb-5 reveal-up">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                    Open Map to Select Location
+                                </button>
+                                
+                                <!-- Map Modal -->
+                                                                 <div id="map-modal" class="fixed inset-0 z-[9999] bg-white flex flex-col hidden">
+                                    <div class="flex items-center justify-between p-4 border-b border-slate-100 shadow-sm bg-white">
+                                        <h3 class="font-bold text-slate-800 text-lg">Pick a Location</h3>
+                                        <button type="button" onclick="closeMapModal()" class="p-2  hover:bg-slate-200 rounded-full text-slate-600 transition-colors">
+                                            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
                                         </button>
                                     </div>
-                                    <button type="button" onclick="locateMe()" class="absolute bottom-4 right-4 z-[1000] bg-white p-2 rounded-lg shadow-lg hover:bg-slate-50 transition-colors border border-slate-200 flex items-center gap-2 text-xs font-bold text-slate-700 btn-premium py-2 px-4">
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                                        Locate Me
-                                    </button>
+                                    
+                                     <div class="relative flex-1 min-h-[400px] overflow-hidden border-y border-slate-200">
+                                         <div id="map" class="absolute inset-0 z-0 map-fix" style="height: 100% !important; min-height: 400px !important;"></div>
+                                         <!-- Fixed Center Pin (Android Style) -->
+                                         <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[95%] z-[1001] pointer-events-none drop-shadow-2xl transition-transform duration-200" id="postMapCenterPin">
+                                             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                 <path d="M12 21.7C17.3333 16.2 21 12.2 21 8.5C21 3.8 17.2 0 12.5 0C7.8 0 4 3.8 4 8.5C4 12.2 7.66667 16.2 13 21.7C12.7333 21.9667 12.2667 21.9667 12 21.7Z" fill="#EF4444" stroke="white" stroke-width="0.5"/>
+                                                 <circle cx="12" cy="8.5" r="3" fill="white"/>
+                                             </svg>
+                                         </div>
+                                        <div class="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
+                                            <input type="text" id="map-search" placeholder="Search Pincode, City, or Town..." class="flex-1 text-sm p-3 rounded-xl border border-slate-200 shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white/95 backdrop-blur-sm">
+                                            <button type="button" onclick="searchLocation()" class="bg-indigo-600 text-white p-3 rounded-xl shadow-lg hover:bg-indigo-700 transition-colors">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                            </button>
+                                        </div>
+                                        <button type="button" onclick="locateMe()" class="absolute bottom-6 right-4 z-[1000] bg-white/95 backdrop-blur-sm p-3 px-4 rounded-xl shadow-xl hover: transition-all border border-slate-100 flex items-center gap-2 text-sm font-bold text-slate-700">
+                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                                            Locate Me
+                                        </button>
+                                    </div>
+                                    <div class="p-4 bg-white border-t border-slate-100 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+                                        <button type="button" onclick="closeMapModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-[0.98]">
+                                            Confirm Selected Location
+                                        </button>
+                                        </div>
+                                 </div>
                                 </div>
 
                             <!-- Dynamic Food Fields -->
@@ -158,13 +202,13 @@
                                     </select>
                                 </div>
                                 <div class="floating-group">
-                                    <input type="text" id="used_for" name="used_for" class="floating-input bg-white" placeholder="e.g. 1 year, 2 months">
+                                    <input type="text" id="used_for" name="used_for" class="floating-input bg-white" placeholder="e.g. 1 year, 2 months" maxlength="100">
                                     <label class="floating-label" for="used_for">How long was it used for?</label>
                                 </div>
                             </div>
 
                             <div class="floating-group reveal-up mb-5">
-                                <input type="text" id="return_offer" name="return_offer" class="floating-input bg-white" placeholder=" ">
+                                <input type="text" id="return_offer" name="return_offer" class="floating-input bg-white" placeholder=" " maxlength="255">
                                 <label class="floating-label" for="return_offer">Looking For In Return</label>
                             </div>
 
@@ -190,30 +234,95 @@
             initMap();
         });
 
-        let map, marker;
+        function openMapModal() {
+            const modal = document.getElementById('map-modal');
+            modal.classList.remove('hidden');
+            
+            // Delay initialization slightly to let the browser compute dimensions
+            setTimeout(() => {
+                if(!map) initMap();
+                else map.invalidateSize();
+            }, 50);
+        }
+
+        function closeMapModal() {
+            document.getElementById('map-modal').classList.add('hidden');
+        }
+
+        let map, mapInitialized = false;
+
         function initMap() {
+            if(mapInitialized) return;
+            mapInitialized = true;
             // Default center India
             const indiaCenter = [20.5937, 78.9629];
-            map = L.map('map').setView(indiaCenter, 5);
+            map = L.map('map', {
+                zoomControl: false,
+                attributionControl: false,
+                zoomAnimation: false,
+                fadeAnimation: false,
+                markerZoomAnimation: false,
+                inertia: false
+            }).setView(indiaCenter, 5);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
+            // High-quality Open Source Tiles (CartoDB Voyager)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+                maxZoom: 20
             }).addTo(map);
 
-            marker = L.marker(indiaCenter, { draggable: true }).addTo(map);
+            // Initial render fix for tiles
+            setTimeout(() => { if(map) map.invalidateSize(); }, 200);
+            
+            // Default center India (Initially no marker until clicked/located)
+            map.setView(indiaCenter, 5);
 
-            map.on('click', (e) => {
-                const { lat, lng } = e.latlng;
-                updateLocation(lat, lng);
+            // ResizeObserver for perfect rendering
+            const ro = new ResizeObserver(() => {
+                if (map) map.invalidateSize();
+            });
+            ro.observe(document.getElementById('map'));
+
+            // Track map movement for location selection (Android style)
+            map.on('movestart', () => {
+                const pin = document.getElementById('postMapCenterPin');
+                if(pin) pin.style.transform = 'translate(-50%, -110%) scale(1.1)';
             });
 
-            marker.on('dragend', (e) => {
-                const { lat, lng } = marker.getLatLng();
-                updateLocation(lat, lng);
+            map.on('move', () => {
+                const center = map.getCenter();
+                updateLocation(center.lat, center.lng, null, false);
             });
+
+            map.on('moveend', () => {
+                const pin = document.getElementById('postMapCenterPin');
+                if(pin) pin.style.transform = 'translate(-50%, -95%) scale(1.0)';
+                const center = map.getCenter();
+                reverseGeocodePost(center.lat, center.lng);
+            });
+            
+            // Initial render fix for tiles
+            setTimeout(() => { map.invalidateSize(); }, 100);
             
             // Try to get user location on load (silently)
             locateMe(false);
+        }
+
+        async function updateMapFromInputs() {
+            const pincode = document.getElementById('pincode').value;
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state').value;
+            
+            if(!pincode && !city && !state) return;
+            
+            const query = [pincode, city, state].filter(Boolean).join(', ');
+            try {
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+                const data = await res.json();
+                if(data && data.length > 0) {
+                    const { lat, lon } = data[0];
+                    updateLocation(parseFloat(lat), parseFloat(lon), 13);
+                }
+            } catch(e) {}
         }
 
         function locateMe(isManual = true) {
@@ -240,20 +349,28 @@
             }, options);
         }
 
-        async function updateLocation(lat, lng, zoom = null) {
-            marker.setLatLng([lat, lng]);
-            if(zoom) map.setView([lat, lng], zoom);
-            else map.panTo([lat, lng]);
+        async function updateLocation(lat, lng, zoom = null, doFly = true) {
+            if(doFly) {
+                if(zoom) map.setView([lat, lng], zoom, { animate: false });
+                else map.setView([lat, lng], map.getZoom(), { animate: false });
+            }
             
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
+        }
 
-            // Reverse geocode
+        async function reverseGeocodePost(lat, lng) {
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
                 const data = await res.json();
-                if(data.display_name) {
-                    document.getElementById('location').value = data.display_name;
+                if(data && data.address) {
+                    const addr = data.display_name;
+                    document.getElementById('location').value = addr;
+                    
+                    // Try to auto-populate fields if empty
+                    if(!document.getElementById('pincode').value) document.getElementById('pincode').value = data.address.postcode || '';
+                    if(!document.getElementById('city').value) document.getElementById('city').value = data.address.city || data.address.town || data.address.village || '';
+                    if(!document.getElementById('state').value) document.getElementById('state').value = data.address.state || '';
                 }
             } catch(e) { console.error('Geocode error', e); }
         }
@@ -360,3 +477,7 @@
     </script>
 </body>
 </html>
+
+
+
+

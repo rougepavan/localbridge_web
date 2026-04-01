@@ -1,114 +1,157 @@
-[
-    {
-        "Field": "id",
-        "Type": "int(11)",
-        "Null": "NO",
-        "Key": "PRI",
-        "Default": null,
-        "Extra": "auto_increment"
-    },
-    {
-        "Field": "user_name",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "UNI",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "email",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "UNI",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "password",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "full_name",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "location",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "bio",
-        "Type": "text",
-        "Null": "YES",
-        "Key": "",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "preferred_exchange",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "",
-        "Default": "Meetup",
-        "Extra": ""
-    },
-    {
-        "Field": "phone",
-        "Type": "varchar(20)",
-        "Null": "YES",
-        "Key": "",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "profile_image",
-        "Type": "varchar(255)",
-        "Null": "YES",
-        "Key": "",
-        "Default": null,
-        "Extra": ""
-    },
-    {
-        "Field": "rating",
-        "Type": "float",
-        "Null": "YES",
-        "Key": "",
-        "Default": "4.5",
-        "Extra": ""
-    },
-    {
-        "Field": "trust",
-        "Type": "int(11)",
-        "Null": "YES",
-        "Key": "",
-        "Default": "100",
-        "Extra": ""
-    },
-    {
-        "Field": "posted",
-        "Type": "int(11)",
-        "Null": "YES",
-        "Key": "",
-        "Default": "0",
-        "Extra": ""
-    },
-    {
-        "Field": "trades",
-        "Type": "int(11)",
-        "Null": "YES",
-        "Key": "",
-        "Default": "0",
-        "Extra": ""
-    }
-]
+{
+    "schema": [
+        {
+            "Field": "id",
+            "Type": "int(11)",
+            "Null": "NO",
+            "Key": "PRI",
+            "Default": null,
+            "Extra": "auto_increment"
+        },
+        {
+            "Field": "name",
+            "Type": "varchar(200)",
+            "Null": "NO",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "description",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "image_name",
+            "Type": "varchar(255)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "user_name",
+            "Type": "varchar(150)",
+            "Null": "YES",
+            "Key": "MUL",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "category",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "expiry_date",
+            "Type": "date",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "freshness",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "used_for",
+            "Type": "varchar(100)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "item_condition",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "return_offer",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "distance",
+            "Type": "float",
+            "Null": "YES",
+            "Key": "",
+            "Default": "0",
+            "Extra": ""
+        },
+        {
+            "Field": "rating",
+            "Type": "float",
+            "Null": "YES",
+            "Key": "",
+            "Default": "5",
+            "Extra": ""
+        },
+        {
+            "Field": "lat",
+            "Type": "double",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "lng",
+            "Type": "double",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "quantity",
+            "Type": "varchar(50)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "unit",
+            "Type": "varchar(20)",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "ai_insight",
+            "Type": "text",
+            "Null": "YES",
+            "Key": "",
+            "Default": null,
+            "Extra": ""
+        },
+        {
+            "Field": "created_at",
+            "Type": "timestamp",
+            "Null": "NO",
+            "Key": "",
+            "Default": "current_timestamp()",
+            "Extra": ""
+        }
+    ],
+    "data": []
+}
