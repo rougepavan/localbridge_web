@@ -80,7 +80,7 @@
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
-                        <input type="email" id="email" name="email" class="floating-input" placeholder=" " required maxlength="150" pattern="^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|protonmail\.com)$" title="Please enter a supported public email (e.g. @gmail.com)">
+                        <input type="email" id="email" name="email" class="floating-input text-sm" placeholder=" " required maxlength="150">
                         <label class="floating-label" for="email">Email address</label>
                     </div>
 
@@ -90,7 +90,7 @@
                             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
                             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                         </svg>
-                        <input type="password" id="password" name="password" class="floating-input" placeholder=" " required maxlength="128" style="padding-right: 3rem;">
+                        <input type="password" id="password" name="password" class="floating-input text-sm" placeholder=" " required maxlength="128" style="padding-right: 3rem;">
                         <label class="floating-label" for="password">Password</label>
                         <button type="button" class="eye-toggle" id="eyeToggle" onclick="togglePasswordVisibility()" title="Show/Hide password">
                             <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -128,6 +128,9 @@
     <script src="/static/js/animations.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            ValidationHelper.attach('email', 'email');
+            ValidationHelper.attach('password', 'required'); // Just required for login
+
             const urlParams = new URLSearchParams(window.location.search);
             const emailParam = urlParams.get('email');
             if (emailParam) {

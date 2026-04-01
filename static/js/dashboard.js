@@ -52,8 +52,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       const trust  = document.getElementById('stat-trust');
       if (traded) traded.textContent = data.trades ?? 0;
       if (posted) posted.textContent = data.posted ?? 0;
-      if (rating) rating.textContent = data.rating ? parseFloat(data.rating).toFixed(1) : '0.0';
-      if (trust)  trust.textContent  = (data.trust ?? 50) + '%';
+      if (rating) rating.textContent = data.rating ? parseFloat(data.rating).toFixed(1) : '5.0';
+      if (trust)  trust.textContent  = (data.trust ?? 100) + '%';
     }
   } catch (e) {
     console.warn('Failed to load user details:', e);

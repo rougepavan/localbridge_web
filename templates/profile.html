@@ -100,18 +100,18 @@
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <div class="floating-group">
-                                            <input type="text" id="name" name="name" class="floating-input" placeholder=" " required pattern="^[a-zA-Z\s]+$" title="Please enter a valid name" maxlength="100">
+                                            <input type="text" id="name" name="name" class="floating-input" placeholder=" " required maxlength="100">
                                             <label class="floating-label">Full Name</label>
                                         </div>
                                         <div class="floating-group">
-                                            <input type="tel" id="phone" name="phone" class="floating-input" placeholder=" " pattern="^\d{10}$" title="Please enter a valid 10-digit phone number" maxlength="10">
-                                            <label class="floating-label">Phone Label</label>
+                                            <input type="tel" id="phone" name="phone" class="floating-input" placeholder=" " maxlength="10">
+                                            <label class="floating-label">Phone Number</label>
                                         </div>
                                     </div>
                                     
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <div class="floating-group">
-                                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required pattern="^[a-zA-Z\s,]+$" title="Please enter a valid city/state" maxlength="200">
+                                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required maxlength="200">
                                             <label class="floating-label">City, State</label>
                                         </div>
                                         <div class="floating-group">
@@ -273,7 +273,7 @@
                                 </button>
                             </div>
                             <div class="floating-group relative">
-                                <input type="password" id="new_password" name="new_password" class="floating-input !bg-transparent pr-12" placeholder=" " required minlength="8" maxlength="128" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?&quot;:{}|<>\s]).{8,}" title="Please enter a stronger new password (8+ chars, mix of case, number &amp; special char)">
+                                <input type="password" id="new_password" name="new_password" class="floating-input !bg-transparent pr-12" placeholder=" " required minlength="8" maxlength="128">
                                 <label class="floating-label">New Password</label>
                                 <button type="button" onclick="togglePasswordVisibility(this, 'new_password')" class="absolute top-1/2 -translate-y-1/2 right-3 p-2 hover:bg-slate-100 rounded-lg transition-colors z-10">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
@@ -312,6 +312,11 @@
     <script src="/static/js/dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", async () => {
+            ValidationHelper.attach('name', 'name');
+            ValidationHelper.attach('phone', 'phone');
+            ValidationHelper.attach('location', 'city');
+            ValidationHelper.attach('new_password', 'password');
+
             const user = AppState.getUser();
             if(!user) return AppState.requireAuth();
 

@@ -181,6 +181,11 @@
         const pid = urlParams.get('id');
 
         document.addEventListener("DOMContentLoaded", async () => {
+            ValidationHelper.attach('date', 'required');
+            ValidationHelper.attach('time', 'required');
+            ValidationHelper.attach('location', 'required');
+            ValidationHelper.attach('offer_text', 'required');
+
             AppState.requireAuth();
             initMap();
             const user = AppState.getUser();

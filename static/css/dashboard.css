@@ -48,7 +48,6 @@
   white-space: nowrap;
   background: var(--prem-gradient-2);
   -webkit-background-clip: text;
-  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 .sidebar.collapsed .sidebar-logo span { display: none; }
@@ -215,32 +214,4 @@
   .top-navbar .search-bar { display: none; }
   .top-navbar { padding: 0 1rem; }
   .content-area { padding: 1.5rem 1rem; }
-}
-
-/* --- LEAFLET FIXES --- */
-.map-fix {
-  min-height: 350px !important;
-  width: 100% !important;
-  display: block !important;
-  background: #f1f5f9; /* Fallback color for gridding */
-}
-
-/* Ensure the Leaflet pane is always on top of the map but inside the modal */
-.leaflet-container {
-  font-family: inherit !important;
-  z-index: 1 !important;
-}
-
-.leaflet-marker-pane {
-  z-index: 600 !important;
-}
-
-/* --- PULSE ANIMATION --- */
-@keyframes map-pointer-pulse {
-  0% { stroke-width: 3; stroke-opacity: 1; }
-  50% { stroke-width: 8; stroke-opacity: 0.5; }
-  100% { stroke-width: 3; stroke-opacity: 1; }
-}
-.map-pointer-pulse {
-  animation: map-pointer-pulse 2s infinite ease-in-out;
 }

@@ -5,27 +5,139 @@ const API_BASE = ''; // Same origin
 /**
  * Strict email validation matching backend rules.
  */
+/**
+ * Strict email validation matching backend rules.
+ */
 function validateEmailString(email) {
-    if (!email) return { isValid: false, message: "Email is required" };
+    if (!email) return { isValid: false, message: "Enter a proper mail" };
     email = email.trim().toLowerCase();
     
-    if (email.includes(' ')) return { isValid: false, message: "Email cannot contain spaces" };
+    if (email.includes(' ')) return { isValid: false, message: "Enter a proper mail" };
     const parts = email.split('@');
-    if (parts.length !== 2) return { isValid: false, message: "Email must contain exactly one '@'" };
+    if (parts.length !== 2) return { isValid: false, message: "Enter a proper mail" };
     
     const [local, domain] = parts;
-    if (local.length < 3) return { isValid: false, message: "Local part must be at least 3 characters" };
-    if (local.includes('..')) return { isValid: false, message: "Local part cannot contain consecutive dots" };
-    if (/^\d+$/.test(local)) return { isValid: false, message: "Local part cannot be only numbers" };
-    if (!/^[a-z0-9._%+-]+$/.test(local)) return { isValid: false, message: "Invalid characters in local part" };
+    if (local.length < 3) return { isValid: false, message: "Enter a proper mail" };
+    if (local.includes('..')) return { isValid: false, message: "Enter a proper mail" };
+    if (/^\d+$/.test(local)) return { isValid: false, message: "Enter a proper mail" };
+    if (!/^[a-z0-9._%+-]+$/.test(local)) return { isValid: false, message: "Enter a proper mail" };
     
     const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'];
     if (!allowedDomains.includes(domain)) {
-        return { isValid: false, message: "Only public providers (Gmail, Yahoo, Hotmail, etc.) are allowed" };
+        return { isValid: false, message: "Enter a proper mail" };
     }
     
     return { isValid: true };
 }
+
+/**
+ * Global Validation Helper for all input fields.
+ * Synchronized with Android App logic and strings.
+ */
+const ValidationHelper = {
+    rules: {
+        name: {
+            regex: /^[a-zA-Z\s]+$/,
+            message: "Enter a valid name"
+        },
+        city: {
+            regex: /^[a-zA-Z\s,]+$/,
+            message: "Enter a valid city or town name"
+        },
+        email: {
+            validator: validateEmailString,
+            message: "Enter a proper mail"
+        },
+        password: {
+            validator: (val) => {
+                const hasCap = /[A-Z]/.test(val);
+                const hasLow = /[a-z]/.test(val);
+                const hasNum = /\d/.test(val);
+                const hasSpec = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+                return val.length >= 8 && hasCap && hasLow && hasNum && hasSpec;
+            },
+            message: "1 uppercase, lowercase, number, special and min 8 characters"
+        },
+        phone: {
+            regex: /^\d{10}$/,
+            message: "Enter a valid 10-digit phone number"
+        },
+        pincode: {
+            regex: /^\d{6}$/,
+            message: "Enter a valid 6-digit pincode"
+        },
+        otp: {
+            regex: /^\d{4}$/,
+            message: "Enter a valid 4-digit code"
+        },
+        required: {
+            validator: (val) => val.trim().length > 0,
+            message: "This field is required"
+        }
+    },
+
+    attach: function(inputId, type) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+
+        input.addEventListener('input', () => this.validate(input, type));
+        input.addEventListener('blur', () => this.validate(input, type));
+    },
+
+    validate: function(input, type) {
+        const rule = this.rules[type];
+        if (!rule) return true;
+
+        const val = input.value;
+        let isValid = true;
+        let msg = rule.message;
+
+        if (val === "" && type !== 'required') {
+            this.hideError(input);
+            return true;
+        }
+
+        if (rule.regex) {
+            isValid = rule.regex.test(val);
+        } else if (rule.validator) {
+            const res = rule.validator(val);
+            isValid = typeof res === 'object' ? res.isValid : res;
+            if (typeof res === 'object' && !isValid) msg = res.message || msg;
+        }
+
+        if (isValid) {
+            this.hideError(input);
+        } else {
+            this.showError(input, msg);
+        }
+        return isValid;
+    },
+
+    showError: function(input, msg) {
+        let errorEl = input.parentElement.querySelector('.error-msg');
+        if (!errorEl) {
+            errorEl = document.createElement('p');
+            errorEl.className = 'error-msg text-[11px] font-medium text-rose-500 mt-1.5 italic ml-1';
+            input.parentElement.appendChild(errorEl);
+        }
+        errorEl.textContent = msg;
+        errorEl.classList.remove('hidden');
+        input.classList.add('border-rose-400', 'bg-rose-50/10');
+        input.classList.remove('border-slate-200', 'border-indigo-500');
+    },
+
+    hideError: function(input) {
+        const errorEl = input.parentElement.querySelector('.error-msg');
+        if (errorEl) {
+            errorEl.classList.add('hidden');
+        }
+        input.classList.remove('border-rose-400', 'bg-rose-50/10');
+        // Restore focus color if active, else default
+        if (document.activeElement === input) {
+            input.classList.add('border-indigo-500');
+        }
+    }
+};
 
 // Basic Toast Notification System
 function showToast(message, type = 'success') {
@@ -61,28 +173,6 @@ function showToast(message, type = 'success') {
     toast.style.opacity = '0';
     setTimeout(() => toast.remove(), 300);
   }, 3000);
-}
-
-function togglePasswordVisibility(btn, inputId) {
-    const input = document.getElementById(inputId);
-    if (input.type === 'password') {
-        input.type = 'text';
-        btn.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-indigo-600">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-            </svg>
-        `;
-    } else {
-        input.type = 'password';
-        btn.innerHTML = `
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-        `;
-    }
 }
 
 /**
@@ -176,6 +266,16 @@ const AppState = {
   },
   getLocation: () => {
     return new Promise((resolve) => {
+      // Priority: User's manually selected location during this session
+      try {
+          const manualLat = localStorage.getItem('localbridge_lat');
+          const manualLng = localStorage.getItem('localbridge_lng');
+          if (manualLat && manualLng) {
+            resolve({ lat: parseFloat(manualLat), lng: parseFloat(manualLng) });
+            return;
+          }
+      } catch(e) {}
+
       if (!navigator.geolocation) {
         resolve(null);
         return;
@@ -183,7 +283,7 @@ const AppState = {
       navigator.geolocation.getCurrentPosition(
         (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         () => resolve(null),
-        { timeout: 5000 }
+        { timeout: 5000, enableHighAccuracy: true }
       );
     });
   }
@@ -330,102 +430,3 @@ async function submitApiForm(formElement, url, method = 'POST') {
     btn.disabled = false;
   }
 }
-
-// --- Immediate Field Validation ---
-function setupFieldValidation() {
-    // Select all user-facing inputs
-    const inputs = document.querySelectorAll('input:not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="file"]), select, textarea');
-    
-    inputs.forEach(input => {
-        // Create an error message element
-        let errorMsg = input.parentNode.querySelector('.field-error');
-        if (!errorMsg) {
-            errorMsg = document.createElement('div');
-            // Positioning it absolutely relative to the container for floating inputs
-            errorMsg.className = 'field-error text-red-500 text-xs mt-1 absolute -bottom-5 left-1 opacity-0 transition-opacity duration-200 pointer-events-none font-medium z-10 w-full whitespace-nowrap overflow-hidden text-ellipsis';
-            
-            const group = input.closest('.floating-group');
-            if (group) {
-                // Ensure floating group can contain absolute children properly
-                group.style.position = 'relative';
-                group.appendChild(errorMsg);
-            } else {
-                input.parentNode.style.position = 'relative';
-                input.parentNode.appendChild(errorMsg);
-            }
-        }
-
-        const validateField = () => {
-            // We ignore validity checks if field is disabled or readonly
-            if (input.disabled || input.readOnly) return;
-            
-            // Provide exact specific password validation feedback if it has complexity requirements
-            const isPasswordPattern = input.name && input.name.includes('password') && input.hasAttribute('pattern');
-            if (isPasswordPattern && input.value) {
-                const val = input.value;
-                let missing = [];
-                if (val.length < 8) missing.push("8+ chars");
-                if (!/[A-Z]/.test(val)) missing.push("uppercase");
-                if (!/[a-z]/.test(val)) missing.push("lowercase");
-                if (!/\d/.test(val)) missing.push("number");
-                if (!/[!@#$%^&*(),.?":{}|<>\s]/.test(val)) missing.push("special char");
-                
-                if (missing.length > 0) {
-                    input.setCustomValidity("Add: " + missing.join(", "));
-                } else {
-                    input.setCustomValidity("");
-                }
-            } else if (isPasswordPattern && !input.value) {
-                input.setCustomValidity(""); // Clear custom validity if empty to let required fallback trigger
-            }
-            
-            if (!input.checkValidity()) {
-                input.classList.add('!border-red-500', 'focus:!border-red-500', 'focus:!ring-red-500/10', 'bg-red-50/10');
-                
-                // Construct a user-friendly error message
-                let msg = input.validationMessage; // fallback
-                if (input.validity.customError) {
-                    msg = input.validationMessage;
-                } else if (input.validity.valueMissing) {
-                    msg = 'This field is required.';
-                } else if (input.validity.patternMismatch) {
-                    msg = input.title || 'Invalid format.';
-                } else if (input.validity.typeMismatch) {
-                    if (input.type === 'email') msg = 'Please enter a valid email address.';
-                    else if (input.type === 'url') msg = 'Please enter a valid URL.';
-                    else msg = `Please enter a valid ${input.type}.`;
-                } else if (input.validity.tooShort) {
-                    msg = `Must be at least ${input.getAttribute('minlength')} characters.`;
-                } else if (input.validity.rangeUnderflow) {
-                    msg = `Value must be at least ${input.min}.`;
-                } else if (input.validity.rangeOverflow) {
-                    msg = `Value must be at most ${input.max}.`;
-                }
-
-                errorMsg.innerText = msg;
-                errorMsg.classList.remove('opacity-0');
-                errorMsg.classList.add('opacity-100');
-            } else {
-                // Restore original appearance
-                input.classList.remove('!border-red-500', 'focus:!border-red-500', 'focus:!ring-red-500/10', 'bg-red-50/10');
-                errorMsg.classList.add('opacity-0');
-                errorMsg.classList.remove('opacity-100');
-            }
-        };
-
-        // Listeners for immediate feedback
-        input.addEventListener('input', validateField);
-        input.addEventListener('blur', validateField);
-        
-        // Suppress default bubbles and use inline instead
-        input.addEventListener('invalid', (e) => {
-            e.preventDefault();
-            validateField();
-        });
-    });
-}
-
-// Attach globally after layout settles
-document.addEventListener('DOMContentLoaded', () => {
-    setTimeout(setupFieldValidation, 200);
-});

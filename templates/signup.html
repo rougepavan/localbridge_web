@@ -43,22 +43,22 @@
                 <form id="signup-form">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="floating-group reveal-up">
-                            <input type="text" id="name" name="name" class="floating-input" placeholder=" " required pattern="^[a-zA-Z\s]+$" title="Please enter a valid name" maxlength="100">
+                            <input type="text" id="name" name="name" class="floating-input" placeholder=" " required maxlength="100">
                             <label class="floating-label" for="name">Full Name</label>
                         </div>
                         <div class="floating-group reveal-up">
-                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required pattern="^[a-zA-Z\s,]+$" title="Please enter a valid city or area" maxlength="200">
+                            <input type="text" id="location" name="location" class="floating-input" placeholder=" " required maxlength="200">
                             <label class="floating-label" for="location">City / Area</label>
                         </div>
                     </div>
 
                     <div class="floating-group reveal-up">
-                        <input type="email" id="email" name="email" class="floating-input" placeholder=" " required maxlength="150" pattern="^[a-zA-Z0-9._%+\-]+@(gmail\.com|yahoo\.com|outlook\.com|hotmail\.com|icloud\.com|protonmail\.com)$" title="Please enter a supported public email (e.g. @gmail.com)">
+                        <input type="email" id="email" name="email" class="floating-input" placeholder=" " required maxlength="150">
                         <label class="floating-label" for="email">Email address</label>
                     </div>
                     
                     <div class="floating-group relative reveal-up">
-                        <input type="password" id="password" name="password" class="floating-input !bg-transparent pr-12" placeholder=" " required minlength="8" maxlength="128" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#$%^&*(),.?&quot;:{}|<>\s]).{8,}" title="Please enter a stronger password (8+ chars, mix of case, number &amp; special char)">
+                        <input type="password" id="password" name="password" class="floating-input !bg-transparent pr-12" placeholder=" " required minlength="8" maxlength="128">
                         <label class="floating-label" for="password">Password</label>
                         <button type="button" onclick="togglePasswordVisibility(this, 'password')" class="absolute top-1/2 -translate-y-1/2 right-3 p-2 hover:bg-slate-100 rounded-lg transition-colors z-10">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
@@ -87,6 +87,13 @@
     <script src="/static/js/animations.js"></script>
     <script>
         let isOtpSent = false;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            ValidationHelper.attach('name', 'name');
+            ValidationHelper.attach('location', 'city');
+            ValidationHelper.attach('email', 'email');
+            ValidationHelper.attach('password', 'password');
+        });
 
         document.getElementById('email').addEventListener('blur', async (e) => {
             const email = e.target.value;

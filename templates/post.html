@@ -109,11 +109,11 @@
 
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5 reveal-up">
                                 <div class="floating-group">
-                                    <input type="tel" id="pincode" name="pincode" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" pattern="^\d{5,6}$" title="Please enter a valid 5 or 6 digit pincode" maxlength="6">
+                                    <input type="tel" id="pincode" name="pincode" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" maxlength="6">
                                     <label class="floating-label" for="pincode">Pincode</label>
                                 </div>
                                 <div class="floating-group">
-                                    <input type="text" id="city" name="city" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" pattern="^[a-zA-Z\s]+$" title="Please enter a valid city name" maxlength="100">
+                                    <input type="text" id="city" name="city" class="floating-input bg-white" placeholder=" " onchange="updateMapFromInputs()" maxlength="100">
                                     <label class="floating-label" for="city">City</label>
                                 </div>
                                 <div class="floating-group">
@@ -230,6 +230,12 @@
     <script src="/static/js/dashboard.js"></script>
     <script>
         document.addEventListener("DOMContentLoaded", () => {
+            ValidationHelper.attach('name', 'name');
+            ValidationHelper.attach('city', 'city');
+            ValidationHelper.attach('pincode', 'pincode');
+            ValidationHelper.attach('description', 'required');
+            ValidationHelper.attach('location', 'required');
+
             AppState.requireAuth();
             initMap();
         });
