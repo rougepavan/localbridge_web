@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - LocalBridge</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link href="/static/css/main.css" rel="stylesheet">
-    <link href="/static/css/auth.css" rel="stylesheet">
-    <link href="/static/css/premium-ui.css" rel="stylesheet">
 </head>
 <body class="mesh-bg">
     <div class="auth-wrapper bg-transparent">
@@ -40,7 +38,7 @@
                     <p class="auth-subtitle">Already have an account? <a href="/login" class="auth-link">Log in</a></p>
                 </div>
 
-                <form id="signup-form">
+                <form id="signup-form" novalidate>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="floating-group reveal-up">
                             <input type="text" id="name" name="name" class="floating-input" placeholder=" " required maxlength="100">
@@ -133,19 +131,19 @@
 
             if (!isOtpSent) {
                 // Step 1: Send OTP
-                const validation = validateEmailString(email);
-                if (!validation.isValid) {
-                    showToast(validation.message, 'error');
-                    return;
-                }
+                const emailInput = document.getElementById('email');
+                const passwordInput = document.getElementById('password');
+                const nameInput = document.getElementById('name');
+                const locInput = document.getElementById('location');
 
-                // Password constraints validation
-                const hasCapital = /[A-Z]/.test(password);
-                const hasSmall = /[a-z]/.test(password);
-                const hasNumber = /\d/.test(password);
-                const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-                if (password.length < 8 || !hasCapital || !hasSmall || !hasNumber || !hasSpecial) {
-                    showToast('Please enter a stronger password (8+ chars, mix of case, number & special char).', 'error');
+                // Validate each field individually to trigger immediate visual errors
+                const isEmailValid = ValidationHelper.validate(emailInput, 'email');
+                const isPassValid = ValidationHelper.validate(passwordInput, 'password');
+                const isNameValid = ValidationHelper.validate(nameInput, 'name');
+                const isLocValid = ValidationHelper.validate(locInput, 'city');
+
+                if (!isEmailValid || !isPassValid || !isNameValid || !isLocValid) {
+                    showToast('Please fix the errors highlighted in red.', 'error');
                     return;
                 }
 

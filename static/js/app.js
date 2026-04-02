@@ -1,6 +1,26 @@
 // Global App Logic, API calls, and Utilities
 
-const API_BASE = ''; // Same origin
+const API_BASE = 'http://180.235.121.253:8162/'; // Same origin
+
+// Intercept fetch to automatically route relative API calls to the backend server
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+    let [resource, config] = args;
+    
+    // Handle both string URLs and Request objects
+    let url = typeof resource === 'string' ? resource : resource.url;
+    
+    if (typeof url === 'string' && url.startsWith('/') && !url.startsWith('//')) {
+        const fullUrl = API_BASE.replace(/\/$/, '') + url;
+        if (typeof resource === 'string') {
+            resource = fullUrl;
+        } else {
+            // For Request objects, we need to clone and override the URL
+            resource = new Request(fullUrl, resource);
+        }
+    }
+    return originalFetch(resource, config);
+};
 
 /**
  * Strict email validation matching backend rules.
@@ -9,25 +29,25 @@ const API_BASE = ''; // Same origin
  * Strict email validation matching backend rules.
  */
 function validateEmailString(email) {
-    if (!email) return { isValid: false, message: "Enter a proper mail" };
-    email = email.trim().toLowerCase();
-    
-    if (email.includes(' ')) return { isValid: false, message: "Enter a proper mail" };
-    const parts = email.split('@');
-    if (parts.length !== 2) return { isValid: false, message: "Enter a proper mail" };
-    
-    const [local, domain] = parts;
-    if (local.length < 3) return { isValid: false, message: "Enter a proper mail" };
-    if (local.includes('..')) return { isValid: false, message: "Enter a proper mail" };
-    if (/^\d+$/.test(local)) return { isValid: false, message: "Enter a proper mail" };
-    if (!/^[a-z0-9._%+-]+$/.test(local)) return { isValid: false, message: "Enter a proper mail" };
-    
-    const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'];
-    if (!allowedDomains.includes(domain)) {
-        return { isValid: false, message: "Enter a proper mail" };
-    }
-    
-    return { isValid: true };
+  if (!email) return { isValid: false, message: "Enter a proper mail" };
+  email = email.trim().toLowerCase();
+
+  if (email.includes(' ')) return { isValid: false, message: "Enter a proper mail" };
+  const parts = email.split('@');
+  if (parts.length !== 2) return { isValid: false, message: "Enter a proper mail" };
+
+  const [local, domain] = parts;
+  if (local.length < 3) return { isValid: false, message: "Enter a proper mail" };
+  if (local.includes('..')) return { isValid: false, message: "Enter a proper mail" };
+  if (/^\d+$/.test(local)) return { isValid: false, message: "Enter a proper mail" };
+  if (!/^[a-z0-9._%+-]+$/.test(local)) return { isValid: false, message: "Enter a proper mail" };
+
+  const allowedDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'protonmail.com'];
+  if (!allowedDomains.includes(domain)) {
+    return { isValid: false, message: "Enter a proper mail" };
+  }
+
+  return { isValid: true };
 }
 
 /**
@@ -35,108 +55,162 @@ function validateEmailString(email) {
  * Synchronized with Android App logic and strings.
  */
 const ValidationHelper = {
-    rules: {
-        name: {
-            regex: /^[a-zA-Z\s]+$/,
-            message: "Enter a valid name"
-        },
-        city: {
-            regex: /^[a-zA-Z\s,]+$/,
-            message: "Enter a valid city or town name"
-        },
-        email: {
-            validator: validateEmailString,
-            message: "Enter a proper mail"
-        },
-        password: {
-            validator: (val) => {
-                const hasCap = /[A-Z]/.test(val);
-                const hasLow = /[a-z]/.test(val);
-                const hasNum = /\d/.test(val);
-                const hasSpec = /[!@#$%^&*(),.?":{}|<>]/.test(val);
-                return val.length >= 8 && hasCap && hasLow && hasNum && hasSpec;
-            },
-            message: "1 uppercase, lowercase, number, special and min 8 characters"
-        },
-        phone: {
-            regex: /^\d{10}$/,
-            message: "Enter a valid 10-digit phone number"
-        },
-        pincode: {
-            regex: /^\d{6}$/,
-            message: "Enter a valid 6-digit pincode"
-        },
-        otp: {
-            regex: /^\d{4}$/,
-            message: "Enter a valid 4-digit code"
-        },
-        required: {
-            validator: (val) => val.trim().length > 0,
-            message: "This field is required"
-        }
+  rules: {
+    name: {
+      regex: /^[a-zA-Z\s]+$/,
+      message: "Enter a valid name"
     },
-
-    attach: function(inputId, type) {
-        const input = document.getElementById(inputId);
-        if (!input) return;
-
-        input.addEventListener('input', () => this.validate(input, type));
-        input.addEventListener('blur', () => this.validate(input, type));
+    city: {
+      regex: /^[a-zA-Z0-9\s,.-]+$/,
+      message: "Enter a valid city or town name"
     },
-
-    validate: function(input, type) {
-        const rule = this.rules[type];
-        if (!rule) return true;
-
-        const val = input.value;
-        let isValid = true;
-        let msg = rule.message;
-
-        if (val === "" && type !== 'required') {
-            this.hideError(input);
-            return true;
-        }
-
-        if (rule.regex) {
-            isValid = rule.regex.test(val);
-        } else if (rule.validator) {
-            const res = rule.validator(val);
-            isValid = typeof res === 'object' ? res.isValid : res;
-            if (typeof res === 'object' && !isValid) msg = res.message || msg;
-        }
-
-        if (isValid) {
-            this.hideError(input);
-        } else {
-            this.showError(input, msg);
-        }
-        return isValid;
+    location: {
+      validator: (val) => val.trim().length > 5,
+      message: "Enter a valid meetup location"
     },
-
-    showError: function(input, msg) {
-        let errorEl = input.parentElement.querySelector('.error-msg');
-        if (!errorEl) {
-            errorEl = document.createElement('p');
-            errorEl.className = 'error-msg text-[11px] font-medium text-rose-500 mt-1.5 italic ml-1';
-            input.parentElement.appendChild(errorEl);
-        }
-        errorEl.textContent = msg;
-        errorEl.classList.remove('hidden');
-        input.classList.add('border-rose-400', 'bg-rose-50/10');
-        input.classList.remove('border-slate-200', 'border-indigo-500');
+    email: {
+      validator: validateEmailString,
+      message: "Enter a proper mail"
     },
-
-    hideError: function(input) {
-        const errorEl = input.parentElement.querySelector('.error-msg');
-        if (errorEl) {
-            errorEl.classList.add('hidden');
-        }
-        input.classList.remove('border-rose-400', 'bg-rose-50/10');
-        // Restore focus color if active, else default
-        if (document.activeElement === input) {
-            input.classList.add('border-indigo-500');
-        }
+    password: {
+      validator: (val) => {
+        const hasCap = /[A-Z]/.test(val);
+        const hasLow = /[a-z]/.test(val);
+        const hasNum = /\d/.test(val);
+        const hasSpec = /[!@#$%^&*(),.?":{}|<>]/.test(val);
+        return val.length >= 8 && hasCap && hasLow && hasNum && hasSpec;
+      },
+      message: "1 uppercase, lowercase, number, special and min 8 characters"
+    },
+    phone: {
+      regex: /^\d{10}$/,
+      message: "Enter a valid 10-digit phone number"
+    },
+    pincode: {
+      regex: /^\d{6}$/,
+      message: "Enter a valid 6-digit pincode"
+    },
+    otp: {
+      regex: /^\d{4}$/,
+      message: "Enter a valid 4-digit code"
+    },
+    offer: {
+      validator: (val) => val.trim().length >= 3,
+      message: "Enter what you are offering (min 3 chars)"
+    },
+    required: {
+      validator: (val) => val.trim().length > 0,
+      message: "This field is required"
     }
+  },
+
+  attach: function (inputId, type) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    input.addEventListener('input', () => this.validate(input, type));
+    input.addEventListener('blur', () => this.validate(input, type));
+  },
+
+  validate: function (input, type) {
+    const rule = this.rules[type];
+    if (!rule) return true;
+
+    const val = input.value;
+    let isValid = true;
+    let msg = rule.message;
+
+    if (val === "" && type !== 'required') {
+      this.hideError(input);
+      return true;
+    }
+
+    if (rule.regex) {
+      isValid = rule.regex.test(val);
+    } else if (rule.validator) {
+      const res = rule.validator(val);
+      isValid = typeof res === 'object' ? res.isValid : res;
+      if (typeof res === 'object' && !isValid) msg = res.message || msg;
+    }
+
+    if (isValid) {
+      this.hideError(input);
+    } else {
+      this.showError(input, msg);
+    }
+    return isValid;
+  },
+
+  showError: function (input, msg) {
+    let errorEl = input.parentElement.querySelector('.error-msg');
+    if (!errorEl) {
+      errorEl = document.createElement('p');
+      errorEl.className = 'error-msg text-[11px] font-medium text-rose-500 mt-1.5 italic ml-1';
+      input.parentElement.appendChild(errorEl);
+    }
+    errorEl.textContent = msg;
+    errorEl.classList.remove('hidden');
+    input.classList.add('border-rose-400', 'bg-rose-50/10');
+    input.classList.remove('border-slate-200', 'border-indigo-500');
+  },
+
+  hideError: function (input) {
+    const errorEl = input.parentElement.querySelector('.error-msg');
+    if (errorEl) {
+      errorEl.classList.add('hidden');
+    }
+    input.classList.remove('border-rose-400', 'bg-rose-50/10');
+    // Restore focus color if active, else default
+    if (document.activeElement === input) {
+      input.classList.add('border-indigo-500');
+    }
+  },
+
+  /**
+   * Validates all attached fields in a container/form.
+   * Triggers visual errors for any invalid fields.
+   */
+  validateAll: function (containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return true;
+
+    // Find all inputs with validation rules that we might have attached
+    // Note: For simplicity, we assume we know which fields to check
+    // Or we can find all inputs with IDs and try to validate them
+    const inputs = container.querySelectorAll('input, textarea, select');
+    let allValid = true;
+    let firstInvalid = null;
+
+    inputs.forEach(input => {
+      // SKIP: search bars, hidden fields (unless specified), or ignored IDs
+      if (input.id?.includes('search') || input.type === 'hidden' || input.dataset.ignoreValidation) {
+        return;
+      }
+
+      if (input.hasAttribute('required') && !input.value.trim()) {
+        this.validate(input, 'required');
+        allValid = false;
+        if (!firstInvalid) firstInvalid = input;
+      } else if (input.id && input.hasAttribute('required')) {
+        // Only validate non-empty fields with rules, or required fields
+        let type = 'required';
+        if (input.id.includes('email')) type = 'email';
+        else if (input.id.includes('password')) type = 'password';
+        else if (input.id.includes('phone')) type = 'phone';
+        else if (input.id === 'name' || input.id.includes('title')) type = 'name';
+        else if (input.id.includes('city')) type = 'city';
+        else if (input.id === 'location' || input.id.includes('address')) type = 'location';
+
+        if (!this.validate(input, type)) {
+          allValid = false;
+          if (!firstInvalid) firstInvalid = input;
+        }
+      }
+    });
+
+    if (firstInvalid) firstInvalid.focus();
+    return allValid;
+  }
 };
 
 // Basic Toast Notification System
@@ -150,9 +224,9 @@ function showToast(message, type = 'success') {
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  
-  const icon = type === 'success' ? 
-    `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>` : 
+
+  const icon = type === 'success' ?
+    `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>` :
     `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
 
   toast.innerHTML = `
@@ -161,7 +235,7 @@ function showToast(message, type = 'success') {
   `;
 
   container.appendChild(toast);
-  
+
   // Trigger animation
   requestAnimationFrame(() => {
     toast.classList.add('show');
@@ -222,9 +296,9 @@ function showErrorModal(message, retryCallback) {
 
   const closeModal = () => {
     if (window.gsap) {
-        gsap.to(modal, { scale: 0.9, opacity: 0, duration: 0.3, onComplete: () => container.remove() });
+      gsap.to(modal, { scale: 0.9, opacity: 0, duration: 0.3, onComplete: () => container.remove() });
     } else {
-        container.remove();
+      container.remove();
     }
   };
 
@@ -253,7 +327,7 @@ const AppState = {
       try {
         await fetch('/logout', {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: user.email })
         });
       } catch (e) { console.error('Logout error', e); }
@@ -268,13 +342,13 @@ const AppState = {
     return new Promise((resolve) => {
       // Priority: User's manually selected location during this session
       try {
-          const manualLat = localStorage.getItem('localbridge_lat');
-          const manualLng = localStorage.getItem('localbridge_lng');
-          if (manualLat && manualLng) {
-            resolve({ lat: parseFloat(manualLat), lng: parseFloat(manualLng) });
-            return;
-          }
-      } catch(e) {}
+        const manualLat = localStorage.getItem('localbridge_lat');
+        const manualLng = localStorage.getItem('localbridge_lng');
+        if (manualLat && manualLng) {
+          resolve({ lat: parseFloat(manualLat), lng: parseFloat(manualLng) });
+          return;
+        }
+      } catch (e) { }
 
       if (!navigator.geolocation) {
         resolve(null);
@@ -292,15 +366,15 @@ const AppState = {
 // --- Notifications System ---
 function setupNotifications() {
   const user = AppState.getUser();
-  if(!user) return;
-  
+  if (!user) return;
+
   // Inject notification dropdown into DOM if missing
   let navActions = document.querySelector('.nav-actions');
-  if(navActions && !document.getElementById('notifMenuBtn')) {
+  if (navActions && !document.getElementById('notifMenuBtn')) {
     // Look for the existing bell icon, or add one if it doesn't exist
     // Check if we already have a notification button to avoid duplication or removing wrong buttons
     if (document.getElementById('notifMenuBtn')) return;
-    
+
     const notifMarkup = `
       <div class="relative cursor-pointer mr-4" id="notifMenuBtn">
           <button class="icon-btn" onclick="toggleNotifDropdown()">
@@ -326,56 +400,56 @@ function setupNotifications() {
   setInterval(fetchNotifications, 10000); // Poll every 10s
 }
 
-window.toggleNotifDropdown = function() {
+window.toggleNotifDropdown = function () {
   const drop = document.getElementById('notifDropdown');
-  if(drop) drop.classList.toggle('hidden');
+  if (drop) drop.classList.toggle('hidden');
 }
 
-window.markAllRead = async function() {
+window.markAllRead = async function () {
   const user = AppState.getUser();
-  if(!user) return;
+  if (!user) return;
   try {
-      await fetch('/notifications/read', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({ email: user.email })
-      });
-      fetchNotifications();
-  } catch(e) {}
+    await fetch('/notifications/read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: user.email })
+    });
+    fetchNotifications();
+  } catch (e) { }
 }
 
 async function fetchNotifications() {
   const user = AppState.getUser();
-  if(!user || !user.email) return;
+  if (!user || !user.email) return;
   try {
-      const res = await fetch(`/notifications?email=${user.email}`);
-      const data = await res.json();
-      
-      const badge = document.getElementById('notifBadge');
-      const list = document.getElementById('notifList');
-      
-      if(!badge || !list) return;
+    const res = await fetch(`/notifications?email=${user.email}`);
+    const data = await res.json();
 
-      if(data.length > 0) {
-          if (typeof window.lastNotifCount !== 'undefined' && data.length > window.lastNotifCount) {
-              showToast('New notification: ' + data[0].message, 'info');
-          }
-          window.lastNotifCount = data.length;
+    const badge = document.getElementById('notifBadge');
+    const list = document.getElementById('notifList');
 
-          badge.classList.remove('hidden');
-          
-          const matchesNav = document.querySelector('a[href="/matches"]');
-          if (matchesNav && !document.getElementById('matchesNavDot')) {
-              matchesNav.insertAdjacentHTML('beforeend', '<span id="matchesNavDot" class="w-2.5 h-2.5 bg-pink-500 rounded-full ml-auto shadow-sm"></span>');
-          }
+    if (!badge || !list) return;
 
-          list.innerHTML = data.map(n => {
-              let icon = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="text-indigo-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
-              if(n.type === 'accepted') icon = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
-              
-              let dest = n.related_id ? `/product/0?match_id=${n.related_id}` : '#';
-              
-              return `
+    if (data.length > 0) {
+      if (typeof window.lastNotifCount !== 'undefined' && data.length > window.lastNotifCount) {
+        showToast('New notification: ' + data[0].message, 'info');
+      }
+      window.lastNotifCount = data.length;
+
+      badge.classList.remove('hidden');
+
+      const matchesNav = document.querySelector('a[href="/matches"]');
+      if (matchesNav && !document.getElementById('matchesNavDot')) {
+        matchesNav.insertAdjacentHTML('beforeend', '<span id="matchesNavDot" class="w-2.5 h-2.5 bg-pink-500 rounded-full ml-auto shadow-sm"></span>');
+      }
+
+      list.innerHTML = data.map(n => {
+        let icon = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="text-indigo-500"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+        if (n.type === 'accepted') icon = '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" class="text-green-500"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>';
+
+        let dest = n.related_id ? `/product/0?match_id=${n.related_id}` : '#';
+
+        return `
               <a href="${dest}" class="flex items-start gap-3 p-4 hover:bg-slate-50 border-b border-slate-50 transition-colors">
                   <div class="mt-0.5">${icon}</div>
                   <div class="flex-grow">
@@ -384,18 +458,118 @@ async function fetchNotifications() {
                   </div>
               </a>
           `}).join('');
-      } else {
-          window.lastNotifCount = 0;
-          badge.classList.add('hidden');
-          const checkDot = document.getElementById('matchesNavDot');
-          if(checkDot) checkDot.remove();
-          list.innerHTML = '<div class="p-4 text-center text-sm text-slate-500">No new notifications.</div>';
+    } else {
+      window.lastNotifCount = 0;
+      badge.classList.add('hidden');
+      const checkDot = document.getElementById('matchesNavDot');
+      if (checkDot) checkDot.remove();
+      list.innerHTML = '<div class="p-4 text-center text-sm text-slate-500">No new notifications.</div>';
+    }
+  } catch (e) { }
+}
+
+
+// --- Global Image Zoom Feature ---
+function initImageZoom() {
+  document.addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.tagName === 'IMG' && !target.classList.contains('no-zoom')) {
+      // Filter out small icons or specific avatars if needed
+      if (target.offsetWidth < 32 || target.src.includes('avatar') || target.src.includes('icon')) {
+        // If it's a small icon or avatar, we might want to skip, 
+        // but let's allow avatars if they are part of a profile view.
+        // For now, let's just ignore if tiny.
+        if (target.offsetWidth < 32) return;
       }
-  } catch(e) {}
+
+      openImageZoom(target);
+    }
+  });
+}
+
+function openImageZoom(img) {
+  // Prevent dual modals
+  if (document.querySelector('.image-zoom-overlay')) return;
+
+  const src = img.src;
+  const rect = img.getBoundingClientRect();
+
+  const overlay = document.createElement('div');
+  overlay.className = 'image-zoom-overlay';
+
+  overlay.innerHTML = `
+        <div class="image-zoom-wrapper">
+            <div class="image-zoom-close">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </div>
+            <img src="${src}" class="image-zoom-img">
+        </div>
+    `;
+
+  document.body.appendChild(overlay);
+  const zoomedImg = overlay.querySelector('.image-zoom-img');
+  const closeBtn = overlay.querySelector('.image-zoom-close');
+
+  // Lock scroll
+  document.body.style.overflow = 'hidden';
+
+  // GSAP Animation: Grow from source
+  if (window.gsap) {
+    gsap.set(overlay, { opacity: 0 });
+    gsap.set(zoomedImg, {
+      x: rect.left + (rect.width / 2) - (window.innerWidth / 2),
+      y: rect.top + (rect.height / 2) - (window.innerHeight / 2),
+      scale: rect.width / window.innerWidth,
+      opacity: 0,
+      borderRadius: '1rem'
+    });
+
+    gsap.to(overlay, { opacity: 1, duration: 0.3 });
+    gsap.to(zoomedImg, {
+      x: 0,
+      y: 0,
+      scale: 1,
+      opacity: 1,
+      duration: 0.5,
+      ease: "power2.out",
+      borderRadius: '1.5rem'
+    });
+  }
+
+  const close = () => {
+    document.body.style.overflow = '';
+    if (window.gsap) {
+      gsap.to(overlay, {
+        opacity: 0,
+        duration: 0.3,
+        onComplete: () => overlay.remove()
+      });
+      gsap.to(zoomedImg, {
+        scale: 0.8,
+        opacity: 0,
+        duration: 0.3
+      });
+    } else {
+      overlay.remove();
+    }
+  };
+
+  overlay.onclick = (e) => { if (e.target === overlay || e.target.classList.contains('image-zoom-wrapper')) close(); };
+  closeBtn.onclick = close;
+
+  // Escape key support
+  const handleEsc = (e) => {
+    if (e.key === 'Escape') {
+      close();
+      document.removeEventListener('keydown', handleEsc);
+    }
+  };
+  document.addEventListener('keydown', handleEsc);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    setupNotifications();
+  setupNotifications();
+  initImageZoom();
 });
 
 // Helper for generic API forms

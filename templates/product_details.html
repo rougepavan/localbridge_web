@@ -4,11 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Exchange Details - LocalBridge</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link href="/static/css/main.css" rel="stylesheet">
-    <link href="/static/css/dashboard.css" rel="stylesheet">
-    <link href="/static/css/premium-ui.css" rel="stylesheet">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
@@ -118,9 +116,11 @@
                             </div>
                             
                             <!-- Product Location Map -->
-                            <div class="mt-4 mb-4">
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Item Origin Location</p>
-                                <div id="product-map" class="rounded-xl overflow-hidden border border-slate-200" style="height: 150px; width: 100%;"></div>
+                            <div class="mt-8 mb-6 reveal-up">
+                                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 ml-1">Item Origin Location</p>
+                                <div id="product-map-box" class="rounded-[2rem] overflow-hidden border border-slate-200 shadow-2xl shadow-indigo-500/5 relative" style="height: 180px; width: 100%;">
+                                    <div id="product-map" class="absolute inset-0"></div>
+                                </div>
                             </div>
 
                             <div id="actionBarContainer"></div>
@@ -146,18 +146,30 @@
                                     <input type="hidden" id="lat" name="lat">
                                     <input type="hidden" id="lng" name="lng">
                                     
-                                    <div id="meetup-map-container" class="rounded-xl overflow-hidden border border-slate-200 relative group" style="height: 200px; width: 100%;">
-                                        <div id="meetup-map" style="height: 100%; width: 100%;"></div>
-                                        <div class="absolute top-2 left-2 right-2 z-[1000] flex gap-1.5">
-                                            <input type="text" id="map-search" placeholder="Search Pincode, City, or Town..." class="flex-1 text-[10px] p-1.5 rounded border border-slate-200 shadow-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                                            <button type="button" onclick="searchLocation()" class="bg-indigo-600 text-white p-1.5 rounded shadow hover:bg-indigo-700 transition-colors">
-                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <div id="meetup-map-box" class="relative bg-white border border-slate-200 rounded-[2rem] overflow-hidden mb-8 shadow-2xl shadow-indigo-500/10 transition-all duration-300" style="height: 250px; z-index: 10;">
+                                        <div class="relative w-full h-full">
+                                            <div id="meetup-map" class="absolute inset-0" style="z-index:1;"></div>
+                                            
+                                            <div id="map-search-container" class="absolute top-4 left-4 right-4 z-[1000] flex gap-2">
+                                                <div class="relative flex-1 group">
+                                                    <input type="text" id="map-search" placeholder="Search Pincode, City, or Town..." 
+                                                        class="w-full text-sm py-3.5 px-5 rounded-2xl border border-slate-200 shadow-xl focus:outline-none focus:ring-4 focus:ring-indigo-500/10 bg-white/95 backdrop-blur-md transition-all placeholder:text-slate-400">
+                                                </div>
+                                                <button type="button" onclick="searchLocation()" class="bg-indigo-600 text-white w-12 h-12 rounded-2xl shadow-xl hover:bg-indigo-700 transition-all flex items-center justify-center shrink-0 active:scale-95">
+                                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                                </button>
+                                                <!-- Dedicated Close Button for Modal -->
+                                                <button type="button" id="close-map-btn" onclick="closeMapModal()" class="hidden bg-white/95 backdrop-blur-md text-slate-800 w-12 h-12 rounded-2xl shadow-xl hover:bg-white transition-all items-center justify-center shrink-0 active:scale-95 border border-slate-200">
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                                                </button>
+                                            </div>
+
+                                            <!-- Locate Me (Premium with Text) -->
+                                            <button type="button" onclick="locateMe()" class="absolute bottom-4 right-4 z-[1000] bg-white/95 backdrop-blur-md px-5 py-3 rounded-2xl shadow-xl hover:bg-white transition-all border border-slate-200 text-slate-800 flex items-center gap-2 font-bold text-xs active:scale-95">
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                                                Locate
                                             </button>
                                         </div>
-                                        <button type="button" onclick="locateMe()" class="absolute bottom-2 right-2 z-[1000] bg-white p-1.5 rounded shadow hover: transition border border-slate-200 flex items-center gap-1.5 text-[10px] font-bold text-slate-700">
-                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
-                                            Locate
-                                        </button>
                                     </div>
                                     <button type="submit" class="w-full btn-premium btn-premium-indigo py-2.5 text-sm text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30">
                                         Update Details
@@ -223,6 +235,7 @@
         let currentUserId = null;
         let partnerEmail = null;
         let exchangeData = null;
+        let isSearching = false;
         
         document.addEventListener("DOMContentLoaded", async () => {
             AppState.requireAuth();
@@ -244,9 +257,6 @@
                 window.location.href = '/dashboard';
             }
         });
-
-        let productMap, productMarker;
-        let meetupMap, meetupMarker;
 
         function initMaps() {
             // Default center India
@@ -318,11 +328,82 @@
                 updateMeetupLocation(lat, lng);
             });
 
-            // Ensure maps correct size on init
-            setTimeout(() => {
-                productMap.invalidateSize();
-                meetupMap.invalidateSize();
+            // Ensure maps correct size on init & handle resizing
+            const roProduct = new ResizeObserver(() => { if (productMap) productMap.invalidateSize(); });
+            const pMapBox = document.getElementById('product-map-box');
+            if(pMapBox) roProduct.observe(pMapBox);
+
+            const roMeetup = new ResizeObserver(() => { if (meetupMap) meetupMap.invalidateSize(); });
+            const mMapBox = document.getElementById('meetup-map-box');
+            if(mMapBox) roMeetup.observe(mMapBox);
+
+            // Periodic checks for tile loading sanity
+            let checkCount = 0;
+            const recheck = setInterval(() => {
+                if (productMap) productMap.invalidateSize();
+                if (meetupMap) meetupMap.invalidateSize();
+                if (++checkCount > 5) clearInterval(recheck);
             }, 500);
+        }
+
+        let productMap, productMarker;
+        let meetupMap, meetupMarker;
+
+        function openMapModal() {
+            const modal = document.getElementById('meetup-map-box');
+            
+            // Create a placeholder to keep layout from jumping
+            const placeholder = document.createElement('div');
+            placeholder.id = 'map-placeholder';
+            placeholder.className = 'w-full mb-8';
+            placeholder.style.height = '250px';
+            modal.parentNode.insertBefore(placeholder, modal);
+
+            // Show Close Button
+            document.getElementById('close-map-btn')?.classList.remove('hidden');
+            document.getElementById('close-map-btn')?.classList.add('flex');
+
+            // Turn into fullscreen modal
+            modal.classList.remove('relative', 'border', 'border-slate-200', 'rounded-[2rem]', 'mb-8');
+            modal.classList.add('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'z-[9999]', 'w-[90%]', 'max-w-2xl', 'rounded-3xl', 'shadow-2xl');
+            modal.style.height = '70vh';
+
+            let backdrop = document.getElementById('map-backdrop');
+            if(!backdrop) {
+                backdrop = document.createElement('div');
+                backdrop.id = 'map-backdrop';
+                backdrop.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[9998] cursor-pointer';
+                backdrop.onclick = closeMapModal;
+                document.body.appendChild(backdrop);
+            }
+            backdrop.style.display = 'block';
+
+            // Triple Invalidation for heavy layout shift
+            setTimeout(() => { if(meetupMap) meetupMap.invalidateSize(); }, 50);
+            setTimeout(() => { if(meetupMap) meetupMap.invalidateSize(); }, 200);
+            setTimeout(() => { if(meetupMap) meetupMap.invalidateSize(); }, 500);
+        }
+
+        function closeMapModal() {
+            const modal = document.getElementById('meetup-map-box');
+            
+            const placeholder = document.getElementById('map-placeholder');
+            if(placeholder) placeholder.remove();
+
+            // Hide Close Button
+            document.getElementById('close-map-btn')?.classList.add('hidden');
+            document.getElementById('close-map-btn')?.classList.remove('flex');
+
+            // Revert to inline box
+            modal.classList.add('relative', 'border', 'border-slate-200', 'rounded-[2rem]', 'mb-8');
+            modal.classList.remove('fixed', 'top-1/2', 'left-1/2', '-translate-x-1/2', '-translate-y-1/2', 'z-[9999]', 'w-[90%]', 'max-w-2xl', 'rounded-3xl', 'shadow-2xl');
+            modal.style.height = '250px';
+
+            const backdrop = document.getElementById('map-backdrop');
+            if(backdrop) backdrop.style.display = 'none';
+
+            setTimeout(() => { if(meetupMap) meetupMap.invalidateSize(); }, 50);
+            setTimeout(() => { if(meetupMap) meetupMap.invalidateSize(); }, 300);
         }
 
         function locateMe(isManual = true) {
@@ -349,7 +430,7 @@
             }, options);
         }
 
-        async function updateMeetupLocation(lat, lng, zoom = null) {
+        async function updateMeetupLocation(lat, lng, zoom = null, isFromSearch = false) {
             meetupMarker.setLatLng([lat, lng]);
             if(zoom) meetupMap.setView([lat, lng], zoom, { animate: false });
             else meetupMap.panTo([lat, lng], { animate: false });
@@ -357,11 +438,13 @@
             document.getElementById('lat').value = lat;
             document.getElementById('lng').value = lng;
 
+            if(isFromSearch) return;
+
             // Reverse geocode
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
                 const data = await res.json();
-                if(data.display_name) {
+                if(data.display_name && !isSearching) {
                     document.getElementById('meetLoc').value = data.display_name;
                 }
             } catch(e) { console.error('Geocode error', e); }
@@ -371,17 +454,21 @@
             const query = document.getElementById('map-search').value;
             if(!query) return;
             
+            isSearching = true;
             try {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
                 const data = await res.json();
                 if(data && data.length > 0) {
-                    const { lat, lon } = data[0];
-                    updateMeetupLocation(parseFloat(lat), parseFloat(lon), 15);
+                    const { lat, lon, display_name } = data[0];
+                    document.getElementById('meetLoc').value = display_name;
+                    updateMeetupLocation(parseFloat(lat), parseFloat(lon), 15, true);
                 } else {
                     showToast('Location not found.', 'error');
                 }
             } catch(e) {
                 showToast('Search error.', 'error');
+            } finally {
+                setTimeout(() => { isSearching = false; }, 1200);
             }
         }
 

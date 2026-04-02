@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@config "../static/js/tailwind.config.js";
+
+/* Bundling global design system and premium components */
+@import "../static/css/premium-ui.css";
+@import "../static/css/auth.css";
+@import "../static/css/dashboard.css";
+
+/* Custom Global Utilities */
+@layer base {
+  :root {
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+  }
+}
