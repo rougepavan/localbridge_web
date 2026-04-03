@@ -47,7 +47,7 @@ const NAV_LINKS = [
 function buildSidebar() {
   // ── Logo ──────────────────────────────────────────────────────────────
   document.querySelectorAll('.sidebar-logo').forEach(el => {
-    el.innerHTML = NAV_ICONS.logo + '<span>LocalBridge</span>';
+    el.innerHTML = '<img src="/logo.png" alt="LocalBridge Logo" style="width: 32px; height: 32px; border-radius: 8px;"><span>LocalBridge</span>';
   });
 
   // ── Nav Items ──────────────────────────────────────────────────────────
