@@ -224,13 +224,21 @@
     <script src="/static/js/sidebar.js"></script>
     <script src="/static/js/dashboard.js"></script>
     <script>
-        // Injected from Flask
+        // Fallback for Flask environment
         const serverProductId = "{{ product_id }}";
         const urlParams = new URLSearchParams(window.location.search);
         
-        // Priority: match_id (exchange view) > id (query param product view) > serverProductId (path-based product view)
+        // Extract ID from pathname (e.g., /product/123) for Express environment
+        const pathParts = window.location.pathname.split('/');
+        const pathProductId = (pathParts[1] === 'product' && pathParts[2]) ? pathParts[2] : null;
+        
+        // Priority: match_id (exchange view) > id (query param) > pathProductId > serverProductId
         const exchangeId = urlParams.get('match_id');
-        const productId = urlParams.get('id') || (serverProductId !== "None" ? serverProductId : null);
+        let productId = urlParams.get('id') || pathProductId;
+        
+        if (!productId && serverProductId !== "None" && !serverProductId.includes('{{')) {
+            productId = serverProductId;
+        }
         
         let currentUserId = null;
         let partnerEmail = null;

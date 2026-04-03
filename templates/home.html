@@ -244,14 +244,12 @@
                 const user = AppState.getUser();
                 const userEmail = user ? user.email : '';
                 
-                // FORCE: Immediately use manually selected coordinates from session if available
-                let manualLat = localStorage.getItem('localbridge_lat');
-                let manualLng = localStorage.getItem('localbridge_lng');
+                // Only use manually selected coordinates — never auto-request GPS on page load
+                const manualLat = localStorage.getItem('localbridge_lat');
+                const manualLng = localStorage.getItem('localbridge_lng');
                 let coords = null;
                 if (manualLat && manualLng) {
                     coords = { lat: parseFloat(manualLat), lng: parseFloat(manualLng) };
-                } else {
-                    coords = await AppState.getLocation();
                 }
 
                 let url = `/products?email=${encodeURIComponent(userEmail)}`;
@@ -415,7 +413,7 @@
                             <img src="${safeAvatarSrc}" class="w-10 h-10 rounded-full object-cover shadow-sm" onerror="this.src='https://ui-avatars.com/api/?name=${p.user_name}'">
                             <div class="leading-tight">
                                 <div class="font-semibold text-slate-900 text-sm">${p.user_name}</div>
-                                <div class="text-xs text-slate-500">${p.distance > 0 ? p.distance.toFixed(1) + ' km away' : 'Location not set'}</div>
+                                <div class="text-xs text-slate-500">${(typeof p.distance === 'number' && p.distance > 0) ? p.distance.toFixed(1) + ' km away' : ''}</div>
                             </div>
                         </div>
                         <img src="${safeImageSrc}" alt="${p.name}" class="feed-card-image" onerror="this.src='https://placehold.co/400x300/e2e8f0/64748b?text=Image+Not+Found'">
@@ -542,16 +540,19 @@
         async function initHomeMap() {
             let initialCoords = [20.5937, 78.9629]; 
             let zoom = 5;
-            
-            const savedCoords = await AppState.getLocation();
-            if(savedCoords) {
-                initialCoords = [savedCoords.lat, savedCoords.lng];
-                hLat = savedCoords.lat; hLng = savedCoords.lng;
+
+            // Only use manually saved coords — never auto-request GPS when map opens
+            const manualLat = localStorage.getItem('localbridge_lat');
+            const manualLng = localStorage.getItem('localbridge_lng');
+            if (manualLat && manualLng) {
+                const lat = parseFloat(manualLat);
+                const lng = parseFloat(manualLng);
+                initialCoords = [lat, lng];
+                hLat = lat; hLng = lng;
                 zoom = 13;
-                reverseGeocodeHome(savedCoords.lat, savedCoords.lng);
-            } else {
-                locateHomeMe(false);
+                reverseGeocodeHome(lat, lng);
             }
+            // else: map opens on default India overview; user can click "Locate Me" manually
 
             hMap = L.map('homeMap').setView(initialCoords, zoom);
 
@@ -600,7 +601,7 @@
                 const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
                 const data = await res.json();
                 if(data && data.address) {
-                    let text = data.address.city || data.address.town || data.address.state_district || data.address.county || "Unknown Location";
+                    let text = data.address.village || data.address.town || data.address.city || data.address.suburb || data.address.neighbourhood || data.address.hamlet || data.address.state_district || data.address.county || "Unknown Location";
                     mapAddressText = text;
                 } else if(data && data.display_name) {
                     mapAddressText = data.display_name.split(',')[0];
@@ -612,7 +613,9 @@
                     text.innerText = data.display_name;
                     box.classList.remove('hidden');
                 }
-            } catch(e) {}
+            } catch(e) {
+                console.error("Geocoding failed", e);
+            }
         }
         
         async function searchHomeLocation() {
@@ -644,18 +647,35 @@
             }, { enableHighAccuracy: true });
         }
 
+        async function asyncReverseGeocodeIfNeeded() {
+            if(!mapAddressText) {
+                const btnOriginalCheck = document.querySelector('button[onclick="checkLocationWithoutSaving()"]').innerText;
+                const btnOriginalSave = document.querySelector('button[onclick="saveNewLocationAndSelect()"]').innerText;
+                
+                try {
+                    document.querySelector('button[onclick="checkLocationWithoutSaving()"]').innerText = 'Getting location...';
+                    await reverseGeocodeHome(hLat, hLng);
+                } finally {
+                    document.querySelector('button[onclick="checkLocationWithoutSaving()"]').innerText = btnOriginalCheck;
+                    document.querySelector('button[onclick="saveNewLocationAndSelect()"]').innerText = btnOriginalSave;
+                }
+            }
+        }
+
         async function checkLocationWithoutSaving() {
             if(!hLat || !hLng) {
                 showToast('Please pick a location on the map first.', 'error');
                 return;
             }
             
+            await asyncReverseGeocodeIfNeeded();
+            
             // Just update the session and feed without hitting /add-location
             localStorage.setItem('localbridge_lat', hLat);
             localStorage.setItem('localbridge_lng', hLng);
             
-            const label = document.getElementById('newLocLabel').value || 'Unsaved Location';
-            document.getElementById('navLocationText').innerText = mapAddressText || label;
+            const label = document.getElementById('newLocLabel').value;
+            document.getElementById('navLocationText').innerText = mapAddressText || label || 'Unknown Location';
             
             showToast('Showing products for this area', 'info');
             toggleLocationModal();
@@ -667,6 +687,8 @@
                 showToast('Please pick a location on the map first.', 'error');
                 return;
             }
+            
+            await asyncReverseGeocodeIfNeeded();
             
             const label = document.getElementById('newLocLabel').value || 'Other';
             const user = AppState.getUser();
@@ -706,7 +728,7 @@
                        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`);
                        const data = await res.json();
                        if(data && data.address) {
-                           let text = data.address.city || data.address.town || data.address.state_district || "Unknown";
+                           let text = data.address.village || data.address.town || data.address.city || data.address.suburb || data.address.neighbourhood || data.address.hamlet || data.address.state_district || "Unknown";
                            const p = document.getElementById('navLocationText');
                            if(p) p.innerText = text;
                        }

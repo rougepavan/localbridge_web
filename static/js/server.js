@@ -19,7 +19,7 @@ app.use('/static', express.static(path.join(PROJECT_ROOT, 'static')));
 
 // 3. Define routes mapping to HTML templates
 const routes = {
-    '/': 'home.html',
+    '/': 'splash.html',
     '/dashboard': 'home.html',
     '/login': 'login.html',
     '/signup': 'signup.html',
