@@ -244,12 +244,28 @@
                 const user = AppState.getUser();
                 const userEmail = user ? user.email : '';
                 
-                // Only use manually selected coordinates — never auto-request GPS on page load
-                const manualLat = localStorage.getItem('localbridge_lat');
-                const manualLng = localStorage.getItem('localbridge_lng');
+                // Automatically get user location (checks localStorage first, falls back to browser GPS)
                 let coords = null;
-                if (manualLat && manualLng) {
-                    coords = { lat: parseFloat(manualLat), lng: parseFloat(manualLng) };
+                try {
+                    coords = await AppState.getLocation();
+                    if (coords && coords.lat && coords.lng) {
+                        // Persist to localStorage
+                        localStorage.setItem('localbridge_lat', coords.lat);
+                        localStorage.setItem('localbridge_lng', coords.lng);
+                        
+                        // Update top nav location text if it's currently unset/default
+                        const p = document.getElementById('navLocationText');
+                        if (p && (p.innerText === 'Set Location' || p.innerText === '' || !p.innerText)) {
+                            const geocodeRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${coords.lat}&lon=${coords.lng}`);
+                            const geocodeData = await geocodeRes.json();
+                            if (geocodeData && geocodeData.address) {
+                                let text = geocodeData.address.village || geocodeData.address.town || geocodeData.address.city || geocodeData.address.suburb || geocodeData.address.neighbourhood || geocodeData.address.hamlet || geocodeData.address.state_district || "Selected Location";
+                                p.innerText = text;
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.log("Failed to get location on feed load:", e);
                 }
 
                 let url = `/products?email=${encodeURIComponent(userEmail)}`;
@@ -258,14 +274,9 @@
                 const response = await fetch(url);
                 const fetchedProducts = await response.json();
                 
-                if (coords) {
-                    window.allProducts = fetchedProducts.filter(p => {
-                        const dist = parseFloat(p.distance);
-                        return !isNaN(dist) && dist <= 50;
-                    });
-                } else {
-                    window.allProducts = fetchedProducts;
-                }
+                // Show all products (sorted by distance in the backend) so developers in other regions 
+                // don't get an empty feed due to mock database entries.
+                window.allProducts = fetchedProducts;
                 
                 renderFeed(window.allProducts);
             } catch (err) {

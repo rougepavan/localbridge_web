@@ -1,6 +1,6 @@
 // Global App Logic, API calls, and Utilities
 
-const API_BASE = 'http://180.235.121.253:8162/'; // Same origin
+const API_BASE = 'http://192.168.31.156:5000/'; // Same origin
 
 // Intercept fetch to automatically route relative API calls to the backend server
 const originalFetch = window.fetch;

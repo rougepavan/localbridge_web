@@ -2,15 +2,31 @@ import { defineConfig } from 'vite';
 import path from 'path';
 import fs from 'fs';
 
+// Collect all HTML templates as multi-page entry points
+const templateDir = path.resolve(__dirname, 'templates');
+const htmlEntries = Object.fromEntries(
+  fs.readdirSync(templateDir)
+    .filter(f => f.endsWith('.html'))
+    .map(f => [
+      f.replace('.html', ''),
+      path.resolve(templateDir, f)
+    ])
+);
+
 export default defineConfig({
   server: {
     // CHANGE THIS PORT NUMBER TO WHATEVER PORT YOU WANT
     port: 3000, 
     proxy: {
       '/static/uploads': {
-        target: 'http://180.235.121.253:8162',
+        target: 'http://192.168.31.156:5000',
         changeOrigin: true
       }
+    }
+  },
+  build: {
+    rollupOptions: {
+      input: htmlEntries
     }
   },
   plugins: [
